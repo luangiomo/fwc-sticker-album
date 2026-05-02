@@ -20,7 +20,7 @@ function normalizeUiConfig(raw: LocalAppConfig | null | undefined): LocalAppConf
   base.filter =
     f === "all" || f === "missing" || f === "duplicates" ? f : base.filter;
   base.groupSort =
-    s === "default" || s === "alphabetic" ? s : base.groupSort;
+    s === "default" || s === "alphabetic" || s === "owned" ? s : base.groupSort;
   return base;
 }
 
@@ -94,6 +94,17 @@ export const useCollection = () => {
     collection.value = {};
   }
 
+  /** Replaces the whole cookie-backed collection (e.g. import on another device). */
+  function replaceCollection(next: Collection) {
+    const cleaned: Collection = {};
+    for (const [code, count] of Object.entries(next)) {
+      if (typeof count === "number" && Number.isInteger(count) && count > 0) {
+        cleaned[code] = count;
+      }
+    }
+    collection.value = cleaned;
+  }
+
   const { allStickers } = useAlbum();
 
   const stats = computed(() => {
@@ -137,6 +148,7 @@ export const useCollection = () => {
     decrement,
     resetCount,
     clearCollection,
+    replaceCollection,
     stats,
     progress,
     filterStickers,

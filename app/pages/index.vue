@@ -21,13 +21,27 @@ function confirmClearCollection() {
 
 const renderedGroups = computed(() => {
   const rows = groups
-    .map((g) => ({ ...g, stickers: filterStickers(g.stickers) }))
+    .map((g) => {
+      const ownedInGroup = g.stickers.filter((s) => getCount(s.code) >= 1).length;
+      return { ...g, stickers: filterStickers(g.stickers), ownedInGroup };
+    })
     .filter((g) => g.stickers.length > 0);
+
   if (groupSort.value === "alphabetic") {
     return [...rows].sort((a, b) =>
       a.slug.localeCompare(b.slug, "pt", { sensitivity: "base" }),
     );
   }
+
+  if (groupSort.value === "owned") {
+    return [...rows].sort((a, b) => {
+      if (b.ownedInGroup !== a.ownedInGroup) {
+        return b.ownedInGroup - a.ownedInGroup;
+      }
+      return a.slug.localeCompare(b.slug, "pt", { sensitivity: "base" });
+    });
+  }
+
   return rows;
 });
 
@@ -81,7 +95,7 @@ function onTeamSelect(groupId: string) {
   <UContainer class="py-8 px-4">
     <div
       data-sticky-page-header
-      class="sticky top-0 z-20 bg-[#f7f7f7] pb-2 pt-0"
+      class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 backdrop-blur-sm pb-2 pt-0 dark:border-neutral-800 dark:bg-neutral-950/95"
     >
       <div class="flex flex-col gap-1">
         <div
@@ -110,6 +124,7 @@ function onTeamSelect(groupId: string) {
                     </div>
                   </template>
                 </UButton>
+                <AlbumCollectionBackup class="shrink-0" />
                 <UButton
                   color="error"
                   variant="outline"
@@ -172,7 +187,7 @@ function onTeamSelect(groupId: string) {
         :key="item.id"
         :id="item.id"
         role="row"
-        class="flex lg:flex-col flex-row gap-4 border-t border-gray-200 py-4"
+        class="flex lg:flex-col flex-row gap-4 border-t border-neutral-200 py-4 dark:border-neutral-800"
       >
         <div class="flex lg:flex-row flex-col items-center gap-2 h-8 lg:h-full">
           <div
@@ -194,11 +209,11 @@ function onTeamSelect(groupId: string) {
               :class="[
                 'flex items-center justify-center cursor-pointer rounded-sm h-8 outline-none transition-colors',
                 getCount(sticker.code) >= 1
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-600/10',
+                  ? 'bg-green-600 text-white dark:bg-green-500 dark:text-white'
+                  : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
                 gIdx === focusGroupIndex &&
                   sIdx === focusStickerIndex &&
-                  'ring-2 ring-primary ring-offset-1',
+                  'ring-2 ring-primary ring-offset-1 ring-offset-neutral-50 dark:ring-offset-neutral-950',
               ]"
             >
               <span class="text-xs leading-none">

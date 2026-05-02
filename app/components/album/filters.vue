@@ -11,6 +11,7 @@ const filters: { label: string; value: FilterMode }[] = [
 
 const sortModes: { label: string; value: GroupSortMode }[] = [
   { label: "Padrão", value: "default" },
+  { label: "Mais tenho", value: "owned" },
   { label: "A-Z", value: "alphabetic" },
 ];
 </script>
