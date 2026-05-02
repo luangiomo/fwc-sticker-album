@@ -1,58 +1,43 @@
 <script setup lang="ts">
-const { groups, selectedGroupId, selectGroup } = useAlbum()
+const { groups } = useAlbum();
+
+defineEmits<{
+  navigate: [groupId: string];
+}>();
 </script>
 
 <template>
-  <div class="group-strip">
-    <button
-      v-for="group in groups"
-      :key="group.id"
-      :class="['group-btn', { active: selectedGroupId === group.id }]"
-      @click="selectGroup(group.id)"
-    >
-      <span class="group-name">{{ group.name }}</span>
-    </button>
-  </div>
+  <UCarousel
+    :items="groups"
+    wheel-gestures
+    drag-free
+    :ui="{
+      container: 'flex w-full flex-row py-1 -ms-2',
+      item: 'shrink-0 basis-auto ps-0',
+    }"
+  >
+    <template #default="{ item }">
+      <div
+        class="flex flex-col items-center gap-1 py-2 px-3 rounded-sm select-none cursor-pointer"
+        @click="$emit('navigate', item.id)"
+      >
+        <div
+          class="rounded-full size-full aspect-square bg-cover bg-center"
+          :style="{
+            width: `${item.image.width * 0.2666667}px`,
+            height: `${item.image.height * 0.2666667}px`,
+            backgroundImage: `url(${item.image.sprite})`,
+            backgroundSize: `320px 160px`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: `${-item.image.x * 0.2666667}px ${-item.image.y * 0.2666667}px`,
+          }"
+        />
+        <span
+          class="text-xs text-center font-secondary truncate pointer-events-none"
+        >
+          {{ item.slug }}
+        </span>
+      </div>
+    </template>
+  </UCarousel>
 </template>
-
-<style scoped>
-.group-strip {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding: 0.75rem 0;
-  scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
-}
-
-.group-btn {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid #334155;
-  border-radius: 0.5rem;
-  background: #0f172a;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.group-btn:hover {
-  border-color: #60a5fa;
-  color: #e2e8f0;
-}
-
-.group-btn.active {
-  background: #1e3a5f;
-  border-color: #3b82f6;
-  color: #fff;
-}
-
-.group-name {
-  font-weight: 600;
-}
-</style>

@@ -5,9 +5,9 @@
       "slug": "FWC",
       "name": "FIFA World Cup",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
         "x": 0,
         "y": 0
       },
@@ -17,160 +17,160 @@
           "id": "2967b676-a571-454c-8823-35fa54628d3a",
           "number": 0,
           "slug": "FWC",
-          "code": "FWC00",
-          "name": "FWC00",
+          "code": "00",
+          "name": "00",
           "variant": "chromo"
         },
         {
           "id": "855fa442-bd16-4b33-aa0e-ec30f31e104a",
           "number": 1,
           "slug": "FWC",
-          "code": "FWC01",
-          "name": "FWC01",
+          "code": "FWC1",
+          "name": "FWC1",
           "variant": "chromo"
         },
         {
           "id": "ff3b4543-e911-44c5-a7da-21dff6aafdae",
           "number": 2,
           "slug": "FWC",
-          "code": "FWC02",
-          "name": "FWC02",
+          "code": "FWC2",
+          "name": "FWC2",
           "variant": "chromo"
         },
         {
           "id": "5f6d4ad5-64a1-4b72-ac9e-409dd50bc52b",
           "number": 3,
           "slug": "FWC",
-          "code": "FWC03",
-          "name": "FWC03",
+          "code": "FWC3",
+          "name": "FWC3",
           "variant": "chromo"
         },
         {
           "id": "f5ad5631-222f-43a8-a15e-dfe60bef66df",
           "number": 4,
           "slug": "FWC",
-          "code": "FWC04",
-          "name": "FWC04",
+          "code": "FWC4",
+          "name": "FWC4",
           "variant": "chromo"
         },
         {
           "id": "6eea52d1-6d01-479b-b634-15d767198603",
           "number": 5,
           "slug": "FWC",
-          "code": "FWC05",
-          "name": "FWC05",
+          "code": "FWC5",
+          "name": "FWC5",
           "variant": "chromo"
         },
         {
           "id": "0faa5101-c11f-4ad0-ac68-d8cb8d86c726",
           "number": 6,
           "slug": "FWC",
-          "code": "FWC06",
-          "name": "FWC06",
+          "code": "FWC6",
+          "name": "FWC6",
           "variant": "chromo"
         },
         {
           "id": "e0f18343-14fd-418b-bb68-1ea9255c7574",
           "number": 7,
           "slug": "FWC",
-          "code": "FWC07",
-          "name": "FWC07",
+          "code": "FWC7",
+          "name": "FWC7",
           "variant": "chromo"
         },
         {
           "id": "931ee3a2-5b7c-4776-9604-2cb5cd8b99e0",
           "number": 8,
           "slug": "FWC",
-          "code": "FWC08",
-          "name": "FWC08",
+          "code": "FWC8",
+          "name": "FWC8",
           "variant": "chromo"
         },
         {
           "id": "c4edf333-4dc3-4f74-a7ea-66e6c9be88a4",
           "number": 9,
           "slug": "FWC",
-          "code": "FWC09",
-          "name": "FWC09",
+          "code": "FWC9",
+          "name": "FWC9",
           "variant": "chromo"
         },
         {
           "id": "be7ea381-ac7e-4a3b-9b6a-11471b3512d4",
           "number": 10,
           "slug": "FWC",
-          "code": "FWC10",
-          "name": "FWC10",
+          "code": "FW10",
+          "name": "FW10",
           "variant": "chromo"
         },
         {
           "id": "2e0ac10d-742b-4e4e-a2db-a3cc6b239fcd",
           "number": 11,
           "slug": "FWC",
-          "code": "FWC11",
-          "name": "FWC11",
+          "code": "FW11",
+          "name": "FW11",
           "variant": "chromo"
         },
         {
           "id": "78091fe5-1ab0-4ad5-bb58-31b44ed94c13",
           "number": 12,
           "slug": "FWC",
-          "code": "FWC12",
-          "name": "FWC12",
+          "code": "FW12",
+          "name": "FW12",
           "variant": "chromo"
         },
         {
           "id": "7089e243-253c-4618-999d-2c64c29eb14e",
           "number": 13,
           "slug": "FWC",
-          "code": "FWC13",
-          "name": "FWC13",
+          "code": "FW13",
+          "name": "FW13",
           "variant": "chromo"
         },
         {
           "id": "feae9411-30e5-4ae0-9cf5-0e9ea36cd286",
           "number": 14,
           "slug": "FWC",
-          "code": "FWC14",
-          "name": "FWC14",
+          "code": "FW14",
+          "name": "FW14",
           "variant": "chromo"
         },
         {
           "id": "b7e8783c-e036-405b-86ee-71352b3b7580",
           "number": 15,
           "slug": "FWC",
-          "code": "FWC15",
-          "name": "FWC15",
+          "code": "FW15",
+          "name": "FW15",
           "variant": "chromo"
         },
         {
           "id": "fe1cc69c-a1ba-465c-868e-5743b632e1cb",
           "number": 16,
           "slug": "FWC",
-          "code": "FWC16",
-          "name": "FWC16",
+          "code": "FW16",
+          "name": "FW16",
           "variant": "chromo"
         },
         {
           "id": "6095584b-44f1-43fb-85ce-e60803c72718",
           "number": 17,
           "slug": "FWC",
-          "code": "FWC17",
-          "name": "FWC17",
+          "code": "FW17",
+          "name": "FW17",
           "variant": "chromo"
         },
         {
           "id": "431ee3e8-e842-4a63-b378-607264dcc00a",
           "number": 18,
           "slug": "FWC",
-          "code": "FWC18",
-          "name": "FWC18",
+          "code": "FW18",
+          "name": "FW18",
           "variant": "chromo"
         },
         {
           "id": "70cdbbc2-b88d-4119-b78e-a769e1293552",
           "number": 19,
           "slug": "FWC",
-          "code": "FWC19",
-          "name": "FWC19",
+          "code": "FW19",
+          "name": "FW19",
           "variant": "chromo"
         }
       ]
@@ -180,10 +180,10 @@
       "slug": "MEX",
       "name": "México",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 120,
         "y": 0
       },
       "type": "team",
@@ -355,10 +355,10 @@
       "slug": "RSA",
       "name": "África do Sul",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 240,
         "y": 0
       },
       "type": "team",
@@ -530,10 +530,10 @@
       "slug": "KOR",
       "name": "Coreia do Sul",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 360,
         "y": 0
       },
       "type": "team",
@@ -705,10 +705,10 @@
       "slug": "CZE",
       "name": "República Tcheca",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 480,
         "y": 0
       },
       "type": "team",
@@ -880,10 +880,10 @@
       "slug": "CAN",
       "name": "Canadá",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 600,
         "y": 0
       },
       "type": "team",
@@ -1055,10 +1055,10 @@
       "slug": "BIH",
       "name": "Bósnia e Herzegovina",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 720,
         "y": 0
       },
       "type": "team",
@@ -1230,10 +1230,10 @@
       "slug": "QAT",
       "name": "Catar",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 840,
         "y": 0
       },
       "type": "team",
@@ -1405,10 +1405,10 @@
       "slug": "SUI",
       "name": "Suíça",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 960,
         "y": 0
       },
       "type": "team",
@@ -1580,10 +1580,10 @@
       "slug": "BRA",
       "name": "Brasil",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 1080,
         "y": 0
       },
       "type": "team",
@@ -1755,11 +1755,11 @@
       "slug": "MAR",
       "name": "Marrocos",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
         "x": 0,
-        "y": 0
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -1930,11 +1930,11 @@
       "slug": "HAI",
       "name": "Haiti",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 120,
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -2105,11 +2105,11 @@
       "slug": "SCO",
       "name": "Escócia",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 240,
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -2280,11 +2280,11 @@
       "slug": "USA",
       "name": "Estados Unidos",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 360,
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -2455,11 +2455,11 @@
       "slug": "PAR",
       "name": "Paraguai",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 480,
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -2630,11 +2630,11 @@
       "slug": "AUS",
       "name": "Austrália",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 600,
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -2805,11 +2805,11 @@
       "slug": "TUR",
       "name": "Turquia",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 720,
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -2980,11 +2980,11 @@
       "slug": "GER",
       "name": "Alemanha",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 840,
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -3155,11 +3155,11 @@
       "slug": "CUW",
       "name": "Curaçao",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 960,
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -3330,11 +3330,11 @@
       "slug": "CIV",
       "name": "Costa do Marfim",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 1080,
+        "y": 120
       },
       "type": "team",
       "stickers": [
@@ -3505,11 +3505,11 @@
       "slug": "ECU",
       "name": "Equador",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
         "x": 0,
-        "y": 0
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -3680,11 +3680,11 @@
       "slug": "NED",
       "name": "Holanda",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 120,
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -3855,11 +3855,11 @@
       "slug": "JPN",
       "name": "Japão",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 240,
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -4030,11 +4030,11 @@
       "slug": "SWE",
       "name": "Suécia",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 360,
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -4205,11 +4205,11 @@
       "slug": "TUN",
       "name": "Tunísia",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 480,
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -4380,11 +4380,11 @@
       "slug": "BEL",
       "name": "Bélgica",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 600,
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -4555,11 +4555,11 @@
       "slug": "EGY",
       "name": "Egito",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 720,
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -4730,11 +4730,11 @@
       "slug": "IRN",
       "name": "Irã",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 840,
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -4905,11 +4905,11 @@
       "slug": "NZL",
       "name": "Nova Zelândia",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 960,
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -5080,11 +5080,11 @@
       "slug": "ESP",
       "name": "Espanha",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 1080,
+        "y": 240
       },
       "type": "team",
       "stickers": [
@@ -5255,11 +5255,11 @@
       "slug": "CPV",
       "name": "Cabo Verde",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
         "x": 0,
-        "y": 0
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -5430,11 +5430,11 @@
       "slug": "KSA",
       "name": "Arábia Saudita",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 120,
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -5605,11 +5605,11 @@
       "slug": "URU",
       "name": "Uruguai",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 240,
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -5780,11 +5780,11 @@
       "slug": "FRA",
       "name": "França",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 360,
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -5955,11 +5955,11 @@
       "slug": "SEN",
       "name": "Senegal",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 480,
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -6130,11 +6130,11 @@
       "slug": "IRQ",
       "name": "Iraque",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 600,
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -6305,11 +6305,11 @@
       "slug": "NOR",
       "name": "Noruega",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 720,
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -6480,11 +6480,11 @@
       "slug": "ARG",
       "name": "Argentina",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 840,
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -6655,11 +6655,11 @@
       "slug": "ALG",
       "name": "Argélia",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 960,
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -6830,11 +6830,11 @@
       "slug": "AUT",
       "name": "Áustria",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 1080,
+        "y": 360
       },
       "type": "team",
       "stickers": [
@@ -7005,11 +7005,11 @@
       "slug": "JOR",
       "name": "Jordânia",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
         "x": 0,
-        "y": 0
+        "y": 480
       },
       "type": "team",
       "stickers": [
@@ -7180,11 +7180,11 @@
       "slug": "POR",
       "name": "Portugal",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 120,
+        "y": 480
       },
       "type": "team",
       "stickers": [
@@ -7355,11 +7355,11 @@
       "slug": "COD",
       "name": "Congo",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 240,
+        "y": 480
       },
       "type": "team",
       "stickers": [
@@ -7530,11 +7530,11 @@
       "slug": "UZB",
       "name": "Uzbequistão",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 360,
+        "y": 480
       },
       "type": "team",
       "stickers": [
@@ -7705,11 +7705,11 @@
       "slug": "COL",
       "name": "Colômbia",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 480,
+        "y": 480
       },
       "type": "team",
       "stickers": [
@@ -7880,11 +7880,11 @@
       "slug": "ENG",
       "name": "Inglaterra",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 600,
+        "y": 480
       },
       "type": "team",
       "stickers": [
@@ -8055,11 +8055,11 @@
       "slug": "CRO",
       "name": "Croácia",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 720,
+        "y": 480
       },
       "type": "team",
       "stickers": [
@@ -8230,11 +8230,11 @@
       "slug": "GHA",
       "name": "Gana",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 840,
+        "y": 480
       },
       "type": "team",
       "stickers": [
@@ -8405,11 +8405,11 @@
       "slug": "PAN",
       "name": "Panamá",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 960,
+        "y": 480
       },
       "type": "team",
       "stickers": [
@@ -8580,11 +8580,11 @@
       "slug": "CC",
       "name": "Coca-Cola",
       "image": {
-        "sprite": "/images.png",
-        "width": 48,
-        "height": 48,
-        "x": 0,
-        "y": 0
+        "sprite": "/collection.png",
+        "width": 120,
+        "height": 120,
+        "x": 1080,
+        "y": 480
       },
       "type": "coca-cola",
       "stickers": [

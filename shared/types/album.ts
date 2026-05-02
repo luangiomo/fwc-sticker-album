@@ -4,6 +4,8 @@ export type Sticker = {
   id: string;
   number: number;
   name: string;
+  code: string;
+  slug: string;
   variant: StickerVariant;
 };
 
@@ -12,6 +14,7 @@ export type GroupType = "oficial" | "team" | "coca-cola";
 export type Group = {
   id: string;
   name: string;
+  slug: string;
   image: Image;
   type: GroupType;
   stickers: Sticker[];
