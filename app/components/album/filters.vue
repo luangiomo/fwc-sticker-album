@@ -1,15 +1,22 @@
 <script setup lang="ts">
-const { filter } = useCollection();
+import type { FilterMode, GroupSortMode } from "#shared/types/album";
+
+const { filter, groupSort } = useCollection();
 
 const filters: { label: string; value: FilterMode }[] = [
   { label: "Todas", value: "all" },
   { label: "Faltantes", value: "missing" },
   { label: "Repetidas", value: "duplicates" },
 ];
+
+const sortModes: { label: string; value: GroupSortMode }[] = [
+  { label: "Padrão", value: "default" },
+  { label: "A-Z", value: "alphabetic" },
+];
 </script>
 
 <template>
-  <div class="grid grid-cols-3 py-2">
+  <div class="flex gap-2 py-2">
     <UFieldGroup size="sm">
       <UButton
         v-for="f in filters"
@@ -18,6 +25,16 @@ const filters: { label: string; value: FilterMode }[] = [
         :variant="filter === f.value ? 'solid' : 'outline'"
         :label="f.label"
         @click="filter = f.value"
+      />
+    </UFieldGroup>
+    <UFieldGroup size="sm">
+      <UButton
+        v-for="s in sortModes"
+        :key="s.value"
+        color="neutral"
+        :variant="groupSort === s.value ? 'solid' : 'outline'"
+        :label="s.label"
+        @click="groupSort = s.value"
       />
     </UFieldGroup>
   </div>

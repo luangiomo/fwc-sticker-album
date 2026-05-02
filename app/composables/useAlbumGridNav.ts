@@ -1,4 +1,28 @@
-type GridGroup = { id: string; stickers: Sticker[] };
+import {
+  ensureVisibleBelowSticky,
+  scrollIntoViewBelowSticky,
+} from "~/utils/scrollBelowSticky";
+
+type GridGroup = {
+  id: string;
+  name: string;
+  slug: string;
+  stickers: Sticker[];
+};
+
+function stickerMatchScore(sticker: Sticker, q: string): number {
+  if (!q) return -1;
+  const code = sticker.code.toLowerCase();
+  const name = sticker.name.toLowerCase();
+  if (code === q || name === q) return 100;
+  if (code.startsWith(q) || name.startsWith(q)) return 80;
+  if (code.includes(q) || name.includes(q)) return 50;
+  return -1;
+}
+
+const STICKER_FIND_INPUT_ID = "sticker-find-input";
+const STICKER_FIND_SELECTOR = "[data-sticker-find]";
+const STICKER_FIND_DEBOUNCE_MS = 800;
 
 export const useAlbumGridNav = (
   gridGroups: Ref<GridGroup[]> | ComputedRef<GridGroup[]>,
@@ -6,12 +30,51 @@ export const useAlbumGridNav = (
   const focusGroupIndex = ref(-1);
   const focusStickerIndex = ref(-1);
   const searchOpen = ref(false);
+  const stickerFindOpen = ref(false);
+  const stickerFindQuery = ref("");
+  const debouncedFindQuery = ref("");
+
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function clearFindDebounce() {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+  }
 
   const { increment, resetCount } = useCollection();
 
   const focusedStickerId = computed(() => {
     const group = gridGroups.value[focusGroupIndex.value];
     return group?.stickers[focusStickerIndex.value]?.code ?? null;
+  });
+
+  const findMatchSummary = computed(() => {
+    if (!stickerFindOpen.value) return "";
+    const live = stickerFindQuery.value.trim();
+    if (!live) return "";
+    const deb = debouncedFindQuery.value.trim();
+    if (live !== deb) return "Aguardando…";
+    const q = deb.toLowerCase();
+    let bestScore = -1;
+    let best: { gi: number; si: number } | null = null;
+    const groups = gridGroups.value;
+    for (let gi = 0; gi < groups.length; gi++) {
+      const stickers = groups[gi]?.stickers ?? [];
+      for (let si = 0; si < stickers.length; si++) {
+        const score = stickerMatchScore(stickers[si]!, q);
+        if (score > bestScore) {
+          bestScore = score;
+          best = { gi, si };
+        }
+      }
+    }
+    if (!best || bestScore < 0) return "Nenhuma figurinha encontrada";
+    const g = groups[best.gi];
+    const s = g?.stickers[best.si];
+    if (!g || !s) return "";
+    return `${g.name} · ${s.code}`;
   });
 
   function clampCol(groupIdx: number, col: number): number {
@@ -28,7 +91,7 @@ export const useAlbumGridNav = (
         `[data-grid-pos="${gIdx}-${sIdx}"]`,
       ) as HTMLElement | null;
       el?.focus({ preventScroll: true });
-      el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      if (el) ensureVisibleBelowSticky(el, "smooth");
     });
   }
 
@@ -43,11 +106,90 @@ export const useAlbumGridNav = (
   function findNextNonEmptyGroup(from: number, direction: 1 | -1): number {
     let idx = from + direction;
     while (idx >= 0 && idx < gridGroups.value.length) {
-      if (gridGroups.value[idx].stickers.length > 0) return idx;
+      if (gridGroups.value[idx]!.stickers.length > 0) return idx;
       idx += direction;
     }
     return -1;
   }
+
+  function applyStickerFindMatch() {
+    if (!stickerFindOpen.value) return;
+    const q = debouncedFindQuery.value.trim().toLowerCase();
+    if (!q) return;
+    let bestScore = -1;
+    let best: { gi: number; si: number } | null = null;
+    const groups = gridGroups.value;
+    for (let gi = 0; gi < groups.length; gi++) {
+      const stickers = groups[gi]?.stickers ?? [];
+      for (let si = 0; si < stickers.length; si++) {
+        const score = stickerMatchScore(stickers[si]!, q);
+        if (score > bestScore) {
+          bestScore = score;
+          best = { gi, si };
+        }
+      }
+    }
+    if (!best || bestScore < 0) return;
+    const g = groups[best.gi];
+    if (!g) return;
+    const groupEl = document.getElementById(g.id);
+    if (groupEl) scrollIntoViewBelowSticky(groupEl, { block: "start" });
+    goToGroup(best.gi, best.si);
+    closeStickerFind();
+  }
+
+  function focusStickerFindInput() {
+    nextTick(() => {
+      const root = document.querySelector(STICKER_FIND_SELECTOR);
+      const input =
+        (root instanceof HTMLInputElement
+          ? root
+          : root?.querySelector("input")) ?? null;
+      input?.focus();
+    });
+  }
+
+  function afterIncrementSticker() {
+    if (stickerFindOpen.value) closeStickerFind();
+  }
+
+  function openStickerFind(seed?: string) {
+    stickerFindOpen.value = true;
+    if (seed !== undefined) stickerFindQuery.value = seed;
+    focusStickerFindInput();
+  }
+
+  function closeStickerFind() {
+    clearFindDebounce();
+    stickerFindOpen.value = false;
+    stickerFindQuery.value = "";
+    debouncedFindQuery.value = "";
+    document
+      .querySelector(STICKER_FIND_SELECTOR)
+      ?.querySelector("input")
+      ?.blur();
+    const gIdx = focusGroupIndex.value;
+    const sIdx = focusStickerIndex.value;
+    if (gIdx >= 0 && sIdx >= 0) {
+      nextTick(() => setFocus(gIdx, sIdx));
+    }
+  }
+
+  watch(stickerFindQuery, () => {
+    if (!stickerFindOpen.value) return;
+    clearFindDebounce();
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      debouncedFindQuery.value = stickerFindQuery.value;
+    }, STICKER_FIND_DEBOUNCE_MS);
+  });
+
+  watch([debouncedFindQuery, gridGroups, stickerFindOpen], () => {
+    if (!stickerFindOpen.value) return;
+    applyStickerFindMatch();
+  });
+
+  onScopeDispose(() => clearFindDebounce());
 
   function moveRight() {
     const groups = gridGroups.value;
@@ -60,7 +202,7 @@ export const useAlbumGridNav = (
     }
 
     const row = groups[focusGroupIndex.value];
-    if (focusStickerIndex.value < row.stickers.length - 1) {
+    if (row && focusStickerIndex.value < row.stickers.length - 1) {
       setFocus(focusGroupIndex.value, focusStickerIndex.value + 1);
     }
   }
@@ -106,7 +248,7 @@ export const useAlbumGridNav = (
     }
 
     const row = groups[focusGroupIndex.value];
-    if (focusStickerIndex.value < row.stickers.length - 1) {
+    if (row && focusStickerIndex.value < row.stickers.length - 1) {
       setFocus(focusGroupIndex.value, focusStickerIndex.value + 1);
     } else {
       const next = findNextNonEmptyGroup(focusGroupIndex.value, 1);
@@ -122,7 +264,7 @@ export const useAlbumGridNav = (
     } else {
       const prev = findNextNonEmptyGroup(focusGroupIndex.value, -1);
       if (prev >= 0) {
-        const len = gridGroups.value[prev].stickers.length;
+        const len = gridGroups.value[prev]!.stickers.length;
         setFocus(prev, len - 1);
       }
     }
@@ -140,17 +282,107 @@ export const useAlbumGridNav = (
     return target.isContentEditable;
   }
 
+  function activeInStickerFindInput(): boolean {
+    const el = document.activeElement;
+    return !!(
+      el &&
+      el instanceof HTMLElement &&
+      el.closest(STICKER_FIND_SELECTOR)
+    );
+  }
+
+  function isPrintableFindSeed(key: string): boolean {
+    if (key.length !== 1 || key === " ") return false;
+    const c = key.codePointAt(0)!;
+    return c >= 0x20 && c !== 0x7f;
+  }
+
+  function toggleStickerFind() {
+    if (stickerFindOpen.value) closeStickerFind();
+    else {
+      searchOpen.value = false;
+      openStickerFind();
+    }
+  }
+
+  function enterStickerSearchMode() {
+    searchOpen.value = false;
+    openStickerFind();
+  }
+
+  const searchModeActive = computed(
+    () => searchOpen.value || stickerFindOpen.value,
+  );
+
+  function exitSearchMode() {
+    if (searchOpen.value) {
+      searchOpen.value = false;
+      return;
+    }
+    if (stickerFindOpen.value) closeStickerFind();
+  }
+
   function onKeydown(e: KeyboardEvent) {
     if (e.defaultPrevented) return;
 
-    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+    const keyLower = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const mod = e.metaKey || e.ctrlKey;
+
+    if (e.key === "Escape" && (stickerFindOpen.value || searchOpen.value)) {
       e.preventDefault();
+      exitSearchMode();
+      return;
+    }
+
+    if (mod && e.shiftKey && keyLower === "k") {
+      e.preventDefault();
+      if (stickerFindOpen.value) closeStickerFind();
       searchOpen.value = true;
       return;
     }
 
+    if (mod && !e.shiftKey && keyLower === "k") {
+      e.preventDefault();
+      toggleStickerFind();
+      return;
+    }
+
+    if (mod && keyLower === "f") {
+      e.preventDefault();
+      toggleStickerFind();
+      return;
+    }
+
     if (searchOpen.value) return;
-    if (isInsideEditable(e.target)) return;
+
+    const inFindInput = activeInStickerFindInput();
+    const passFindInputToGrid =
+      stickerFindOpen.value &&
+      inFindInput &&
+      (e.key === "Enter" ||
+        e.key === " " ||
+        e.key === "Tab" ||
+        ((e.key === "ArrowRight" ||
+          e.key === "ArrowLeft" ||
+          e.key === "ArrowDown" ||
+          e.key === "ArrowUp") &&
+          !e.shiftKey));
+
+    if (inFindInput && !passFindInputToGrid) return;
+
+    if (!passFindInputToGrid && isInsideEditable(e.target)) return;
+
+    if (
+      !stickerFindOpen.value &&
+      !e.metaKey &&
+      !e.ctrlKey &&
+      !e.altKey &&
+      isPrintableFindSeed(e.key)
+    ) {
+      e.preventDefault();
+      openStickerFind(e.key);
+      return;
+    }
 
     switch (e.key) {
       case "ArrowRight":
@@ -174,15 +406,21 @@ export const useAlbumGridNav = (
         if (e.shiftKey) focusPrev();
         else focusNext();
         break;
-      case " ":
       case "Enter":
+      case " ":
         e.preventDefault();
         if (focusedStickerId.value) {
           increment(focusedStickerId.value);
+          afterIncrementSticker();
+        }
+        break;
+      case "Backspace":
+        e.preventDefault();
+        if (focusedStickerId.value) {
+          resetCount(focusedStickerId.value);
         }
         break;
       case "Escape":
-      case "Backspace":
         e.preventDefault();
         if (focusedStickerId.value) {
           resetCount(focusedStickerId.value);
@@ -205,7 +443,7 @@ export const useAlbumGridNav = (
       return;
     }
     const row = groups[focusGroupIndex.value];
-    if (row.stickers.length === 0) {
+    if (!row || row.stickers.length === 0) {
       const next = findNextNonEmptyGroup(focusGroupIndex.value, 1);
       if (next >= 0) {
         setFocus(next, 0);
@@ -235,10 +473,20 @@ export const useAlbumGridNav = (
     focusStickerIndex: readonly(focusStickerIndex),
     focusedStickerId,
     searchOpen,
+    stickerFindOpen,
+    stickerFindQuery,
+    findMatchSummary,
+    closeStickerFind,
     setFocus,
     goToGroup,
     clearFocus,
     cellTabindex,
     cellGridPos,
+    STICKER_FIND_INPUT_ID,
+    STICKER_FIND_SELECTOR,
+    searchModeActive,
+    exitSearchMode,
+    enterStickerSearchMode,
+    afterIncrementSticker,
   };
 };
