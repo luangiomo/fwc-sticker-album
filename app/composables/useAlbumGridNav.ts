@@ -1,3 +1,4 @@
+import { useMediaQuery } from "@vueuse/core";
 import {
   ensureVisibleBelowSticky,
   scrollIntoViewBelowSticky,
@@ -27,6 +28,8 @@ const STICKER_FIND_DEBOUNCE_MS = 800;
 export const useAlbumGridNav = (
   gridGroups: Ref<GridGroup[]> | ComputedRef<GridGroup[]>,
 ) => {
+  const isDesktopNav = useMediaQuery("(min-width: 1024px)");
+
   const focusGroupIndex = ref(-1);
   const focusStickerIndex = ref(-1);
   const searchOpen = ref(false);
@@ -86,6 +89,7 @@ export const useAlbumGridNav = (
   function setFocus(gIdx: number, sIdx: number) {
     focusGroupIndex.value = gIdx;
     focusStickerIndex.value = sIdx;
+    if (!isDesktopNav.value) return;
     nextTick(() => {
       const el = document.querySelector(
         `[data-grid-pos="${gIdx}-${sIdx}"]`,
@@ -324,6 +328,7 @@ export const useAlbumGridNav = (
 
   function onKeydown(e: KeyboardEvent) {
     if (e.defaultPrevented) return;
+    if (!isDesktopNav.value) return;
 
     const keyLower = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     const mod = e.metaKey || e.ctrlKey;
@@ -429,9 +434,22 @@ export const useAlbumGridNav = (
     }
   }
 
+  watch(isDesktopNav, (desktop) => {
+    if (!desktop) {
+      clearFindDebounce();
+      stickerFindOpen.value = false;
+      searchOpen.value = false;
+      stickerFindQuery.value = "";
+      debouncedFindQuery.value = "";
+      clearFocus();
+    }
+  });
+
   onMounted(() => {
     window.addEventListener("keydown", onKeydown);
-    goToGroup(findNextNonEmptyGroup(-1, 1), 0);
+    nextTick(() => {
+      if (isDesktopNav.value) goToGroup(findNextNonEmptyGroup(-1, 1), 0);
+    });
   });
   onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 
@@ -459,6 +477,7 @@ export const useAlbumGridNav = (
   });
 
   function cellTabindex(gIdx: number, sIdx: number): 0 | -1 {
+    if (!isDesktopNav.value) return -1;
     return gIdx === focusGroupIndex.value && sIdx === focusStickerIndex.value
       ? 0
       : -1;

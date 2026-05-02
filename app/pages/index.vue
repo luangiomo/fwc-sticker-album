@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { useMediaQuery } from "@vueuse/core";
 import { scrollIntoViewBelowSticky } from "~/utils/scrollBelowSticky";
+import { duplicateBadgeCount, duplicateExtra } from "~/utils/duplicateDisplay";
+
+const isLg = useMediaQuery("(min-width: 1024px)");
 
 const { groups } = useAlbum();
 const {
@@ -7,12 +11,24 @@ const {
   increment,
   decrement,
   filterStickers,
+  filter,
   groupSort,
   clearCollection,
   stats,
 } = useCollection();
 
 const clearCollectionModalOpen = ref(false);
+
+const groupDetailOpen = ref(false);
+const groupDetailGroup = ref<Group | null>(null);
+
+watch(groupDetailOpen, (open) => {
+  if (!open) {
+    nextTick(() => {
+      groupDetailGroup.value = null;
+    });
+  }
+});
 
 function confirmClearCollection() {
   clearCollection();
@@ -22,7 +38,9 @@ function confirmClearCollection() {
 const renderedGroups = computed(() => {
   const rows = groups
     .map((g) => {
-      const ownedInGroup = g.stickers.filter((s) => getCount(s.code) >= 1).length;
+      const ownedInGroup = g.stickers.filter(
+        (s) => getCount(s.code) >= 1,
+      ).length;
       return { ...g, stickers: filterStickers(g.stickers), ownedInGroup };
     })
     .filter((g) => g.stickers.length > 0);
@@ -62,14 +80,7 @@ const {
   STICKER_FIND_INPUT_ID,
 } = useAlbumGridNav(renderedGroups);
 
-function onStickerCellClick(code: string, gIdx: number, sIdx: number) {
-  increment(code);
-  setFocus(gIdx, sIdx);
-  afterIncrementSticker();
-}
-
-function groupSpriteStyle(group: Group) {
-  const scale = 0.2666667;
+function groupSpriteStyle(group: Group, scale = 0.2666667) {
   return {
     width: `${group.image.width * scale}px`,
     height: `${group.image.height * scale}px`,
@@ -80,104 +91,189 @@ function groupSpriteStyle(group: Group) {
   };
 }
 
+function openGroupDetail(row: { id: string }) {
+  const g = groups.find((x) => x.id === row.id) ?? null;
+  if (!g) return;
+  groupDetailGroup.value = g;
+  groupDetailOpen.value = true;
+}
+
 function onTeamSelect(groupId: string) {
   nextTick(() => {
     const el = document.getElementById(groupId);
     if (el)
       scrollIntoViewBelowSticky(el, { behavior: "smooth", block: "center" });
     const idx = renderedGroups.value.findIndex((g) => g.id === groupId);
-    if (idx >= 0) goToGroup(idx, 0);
+    if (idx >= 0 && isLg.value) goToGroup(idx, 0);
   });
+}
+
+/** Selo +N; no filtro Repetidas só mostra a partir de 3 no total (evita +1 só). */
+function showDuplicateCountLabel(code: string) {
+  const n = getCount(code);
+  if (duplicateBadgeCount(n) <= 0) return false;
+  if (filter.value === "duplicates") return duplicateExtra(n) > 1;
+  return true;
+}
+
+const countAdjustOpen = ref(false);
+const countAdjustSticker = ref<Sticker | null>(null);
+
+watch(countAdjustOpen, (open) => {
+  if (!open) countAdjustSticker.value = null;
+});
+
+function openCountAdjust(sticker: Sticker) {
+  countAdjustSticker.value = sticker;
+  countAdjustOpen.value = true;
+}
+
+function onStickerCellClick(sticker: Sticker, gIdx: number, sIdx: number) {
+  if (isLg.value) {
+    increment(sticker.code);
+    setFocus(gIdx, sIdx);
+    afterIncrementSticker();
+    return;
+  }
+  if (getCount(sticker.code) >= 1) {
+    openCountAdjust(sticker);
+    return;
+  }
+  increment(sticker.code);
+}
+
+function onStickerContextMenu(code: string, gIdx: number, sIdx: number) {
+  if (!isLg.value) return;
+  decrement(code);
+  setFocus(gIdx, sIdx);
+}
+
+function onGroupDetailStickerInteract(sticker: Sticker) {
+  if (isLg.value) {
+    increment(sticker.code);
+    afterIncrementSticker();
+    return;
+  }
+  if (getCount(sticker.code) >= 1) {
+    openCountAdjust(sticker);
+    return;
+  }
+  increment(sticker.code);
+}
+
+function onGroupDetailStickerContextMenu(sticker: Sticker) {
+  if (!isLg.value) return;
+  decrement(sticker.code);
+}
+
+function countAdjustDecrement() {
+  const s = countAdjustSticker.value;
+  if (!s) return;
+  decrement(s.code);
+  if (getCount(s.code) < 1) countAdjustOpen.value = false;
+}
+
+function countAdjustIncrement() {
+  const s = countAdjustSticker.value;
+  if (!s) return;
+  increment(s.code);
 }
 </script>
 
 <template>
-  <UContainer class="py-8 px-4">
+  <UContainer class="px-3 py-4 md:px-5 md:py-5 lg:px-4 lg:py-8">
     <div
       data-sticky-page-header
-      class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 backdrop-blur-sm pb-2 pt-0 dark:border-neutral-800 dark:bg-neutral-950/95"
+      class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 backdrop-blur-sm pb-2 pt-0 dark:border-neutral-800 dark:bg-neutral-950/95 max-lg:pb-2.5 lg:pb-2"
     >
-      <div class="flex flex-col gap-1">
+      <div class="flex flex-col gap-2 max-lg:gap-3 lg:gap-1">
         <div
-          class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
+          class="order-1 max-lg:border-0 lg:order-4 lg:border-t lg:border-neutral-200/90 lg:pt-2 dark:lg:border-neutral-800"
         >
-          <AlbumFilters class="min-w-0 lg:flex-1" />
+          <AlbumGroupStrip @navigate="onTeamSelect" />
+        </div>
+
+        <div
+          class="order-2 flex flex-col gap-1.5 lg:order-1 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
+        >
+          <AlbumFilters
+            v-if="!stickerFindOpen || isLg"
+            class="min-w-0 lg:flex-1"
+          />
           <div
-            class="flex w-full shrink-0 items-center lg:max-w-md lg:justify-end"
+            v-if="stickerFindOpen"
+            data-sticker-find
+            class="flex w-full min-w-0 items-center gap-2 lg:max-w-md lg:gap-2"
           >
-            <template v-if="!stickerFindOpen">
-              <div class="flex w-full flex-wrap items-center justify-end gap-2">
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                  icon="i-lucide-search"
-                  label="Buscar figurinha"
-                  class="min-w-0 flex-1 sm:flex-initial"
-                  @click="enterStickerSearchMode"
-                >
-                  <template #trailing>
-                    <div class="flex items-center gap-1">
-                      <UKbd size="sm">Ctrl</UKbd>
-                      <span class="text-xs">+</span>
-                      <UKbd size="sm">K</UKbd>
-                    </div>
-                  </template>
-                </UButton>
-                <AlbumCollectionBackup class="shrink-0" />
-                <UButton
-                  color="error"
-                  variant="outline"
-                  size="sm"
-                  icon="i-lucide-trash-2"
-                  label="Limpar coleção"
-                  class="shrink-0"
-                  :disabled="stats.owned === 0"
-                  @click="clearCollectionModalOpen = true"
-                />
-              </div>
-            </template>
-            <div
-              v-else
-              data-sticker-find
-              class="flex w-full min-w-0 items-center gap-2"
+            <UInput
+              :id="STICKER_FIND_INPUT_ID"
+              v-model="stickerFindQuery"
+              placeholder="Código ou nome…"
+              autocomplete="off"
+              size="sm"
+              class="min-w-0 flex-1"
+              icon="i-lucide-search"
+              aria-label="Buscar figurinha por código ou nome"
+              @keydown.enter.prevent
+            />
+            <span
+              class="hidden max-w-28 shrink-0 truncate text-xs text-muted sm:block"
+              :title="findMatchSummary"
             >
-              <UInput
-                :id="STICKER_FIND_INPUT_ID"
-                v-model="stickerFindQuery"
-                placeholder="Código ou nome…"
-                autocomplete="off"
-                size="sm"
-                class="min-w-0 flex-1"
-                icon="i-lucide-search"
-                aria-label="Buscar figurinha por código ou nome"
-                @keydown.enter.prevent
-              />
-              <span
-                class="hidden max-w-28 shrink-0 truncate text-xs text-muted sm:block"
-                :title="findMatchSummary"
-              >
-                {{ findMatchSummary }}
-              </span>
-              <UButton
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                square
-                icon="i-lucide-x"
-                aria-label="Sair da busca (Esc)"
-                @click="exitSearchMode"
-              />
-            </div>
+              {{ findMatchSummary }}
+            </span>
+            <UButton
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              square
+              icon="i-lucide-x"
+              aria-label="Sair da busca (Esc)"
+              @click="exitSearchMode"
+            />
+          </div>
+          <div
+            v-else-if="isLg"
+            class="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 lg:max-w-md lg:gap-2"
+          >
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-search"
+              label="Buscar figurinha"
+              class="min-w-0 flex-1 sm:flex-initial"
+              @click="enterStickerSearchMode"
+            >
+              <template #trailing>
+                <div class="flex items-center gap-1">
+                  <UKbd size="sm">Ctrl</UKbd>
+                  <span class="text-xs">+</span>
+                  <UKbd size="sm">K</UKbd>
+                </div>
+              </template>
+            </UButton>
+            <AlbumCollectionBackup class="shrink-0" />
+            <UButton
+              color="error"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-trash-2"
+              label="Limpar coleção"
+              class="shrink-0"
+              :disabled="stats.owned === 0"
+              @click="clearCollectionModalOpen = true"
+            />
           </div>
         </div>
+
         <p
-          v-if="stickerFindOpen"
-          class="text-[11px] leading-snug text-muted lg:text-right"
+          v-if="stickerFindOpen && isLg"
+          class="order-3 hidden text-[11px] leading-snug text-muted lg:order-2 lg:block lg:text-right"
         >
           Esc encerra a busca · Ctrl/Cmd+Shift+K busca por equipe
         </p>
-        <AlbumProgress />
+        <AlbumProgress class="order-4 hidden lg:block" />
       </div>
     </div>
 
@@ -187,45 +283,174 @@ function onTeamSelect(groupId: string) {
         :key="item.id"
         :id="item.id"
         role="row"
-        class="flex lg:flex-col flex-row gap-4 border-t border-neutral-200 py-4 dark:border-neutral-800"
+        class="flex flex-col gap-3 border-t border-neutral-200 py-4 dark:border-neutral-800 max-lg:gap-3 max-lg:py-4 lg:flex-row lg:items-start lg:gap-4 lg:py-4"
       >
-        <div class="flex lg:flex-row flex-col items-center gap-2 h-8 lg:h-full">
+        <div
+          class="flex w-full min-w-0 flex-row items-center gap-3 lg:w-auto lg:max-w-none lg:shrink-0 lg:flex-col lg:items-center lg:gap-2"
+        >
           <div
-            class="rounded-sm size-full aspect-square bg-cover bg-center"
+            role="button"
+            tabindex="0"
+            class="shrink-0 cursor-pointer rounded-sm bg-cover bg-center outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary"
             :style="groupSpriteStyle(item)"
+            :aria-label="`Ver figurinhas de ${item.name}`"
+            @click="openGroupDetail(item)"
+            @keydown.enter.prevent="openGroupDetail(item)"
+            @keydown.space.prevent="openGroupDetail(item)"
           />
-          <div class="grid lg:grid-cols-20 grid-cols-5 w-full gap-1">
-            <div
-              v-for="(sticker, sIdx) in item.stickers"
-              :key="sticker.id"
-              role="gridcell"
-              :tabindex="cellTabindex(gIdx, sIdx)"
-              :data-grid-pos="cellGridPos(gIdx, sIdx)"
-              @click="onStickerCellClick(sticker.code, gIdx, sIdx)"
-              @contextmenu.prevent="
-                decrement(sticker.code);
-                setFocus(gIdx, sIdx);
-              "
-              :class="[
-                'flex items-center justify-center cursor-pointer rounded-sm h-8 outline-none transition-colors',
-                getCount(sticker.code) >= 1
-                  ? 'bg-green-600 text-white dark:bg-green-500 dark:text-white'
-                  : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
-                gIdx === focusGroupIndex &&
-                  sIdx === focusStickerIndex &&
-                  'ring-2 ring-primary ring-offset-1 ring-offset-neutral-50 dark:ring-offset-neutral-950',
-              ]"
+          <h3
+            class="min-w-0 flex-1 truncate text-sm font-medium leading-tight lg:hidden"
+          >
+            {{ item.name }}
+          </h3>
+        </div>
+        <div
+          class="grid w-full min-w-0 grid-cols-5 gap-1.5 lg:grid-cols-20 lg:gap-1 lg:flex-1"
+        >
+          <div
+            v-for="(sticker, sIdx) in item.stickers"
+            :key="sticker.id"
+            role="gridcell"
+            :tabindex="cellTabindex(gIdx, sIdx)"
+            :data-grid-pos="cellGridPos(gIdx, sIdx)"
+            @click="onStickerCellClick(sticker, gIdx, sIdx)"
+            @contextmenu.prevent="
+              onStickerContextMenu(sticker.code, gIdx, sIdx)
+            "
+            :class="[
+              'relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-8 lg:min-h-0 lg:rounded-sm lg:px-0',
+              getCount(sticker.code) >= 1
+                ? 'bg-green-600 text-white dark:bg-green-500 dark:text-green-800'
+                : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
+              gIdx === focusGroupIndex &&
+                sIdx === focusStickerIndex &&
+                'ring-2 ring-primary ring-offset-1 ring-offset-neutral-50 dark:ring-offset-neutral-950',
+            ]"
+          >
+            <span class="text-xs leading-none">
+              {{ sticker.name }}
+            </span>
+            <span
+              v-if="showDuplicateCountLabel(sticker.code)"
+              class="pointer-events-none absolute -right-1 -top-1 z-1 min-w-4 rounded px-0.5 py-px text-center text-[9px] font-semibold leading-none tabular-nums bg-neutral-900 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-900"
+              :title="`${getCount(sticker.code)} na coleção (${duplicateExtra(getCount(sticker.code))} além da primeira)`"
             >
-              <span class="text-xs leading-none">
-                {{ sticker.name }}
-              </span>
-            </div>
+              +{{ duplicateBadgeCount(getCount(sticker.code)) }}
+            </span>
           </div>
         </div>
       </div>
     </div>
 
     <AlbumTeamSearch v-model:open="searchOpen" @select="onTeamSelect" />
+
+    <UModal
+      v-model:open="groupDetailOpen"
+      :ui="{
+        content:
+          'w-[calc(100vw-1.5rem)] max-w-xl max-h-[90vh] flex flex-col',
+      }"
+    >
+      <template #header="{ close }">
+        <div class="flex w-full items-start gap-3">
+          <div
+            v-if="groupDetailGroup"
+            class="rounded-md shrink-0 border border-neutral-200 bg-cover bg-center dark:border-neutral-700"
+            :style="groupSpriteStyle(groupDetailGroup, 0.45)"
+          />
+          <div class="min-w-0 flex-1 pt-0.5">
+            <h2 class="truncate text-lg leading-tight font-semibold">
+              {{ groupDetailGroup?.name }}
+            </h2>
+            <p class="mt-0.5 text-xs text-muted">
+              {{ groupDetailGroup?.stickers.length }} figurinhas
+            </p>
+          </div>
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            square
+            class="shrink-0"
+            aria-label="Fechar"
+            @click="close"
+          />
+        </div>
+      </template>
+      <template #body>
+        <div
+          v-if="groupDetailGroup"
+          class="max-h-[min(65vh,32rem)] overflow-y-auto pr-1 -mr-1"
+        >
+          <div
+            class="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8 max-lg:gap-1.5 lg:gap-1.5"
+          >
+            <button
+              v-for="sticker in groupDetailGroup.stickers"
+              :key="sticker.id"
+              type="button"
+              class="relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-9 lg:min-h-0 lg:rounded-sm"
+              :class="[
+                getCount(sticker.code) >= 1
+                  ? 'bg-green-600 text-white dark:bg-green-500 dark:text-green-800'
+                  : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
+              ]"
+              @click="onGroupDetailStickerInteract(sticker)"
+              @contextmenu.prevent="onGroupDetailStickerContextMenu(sticker)"
+            >
+              <span class="px-0.5">{{ sticker.name }}</span>
+              <span
+                v-if="showDuplicateCountLabel(sticker.code)"
+                class="pointer-events-none absolute -right-1 -top-1 z-1 min-w-4 rounded px-0.5 py-px text-center text-[9px] font-semibold leading-none tabular-nums bg-neutral-900 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-900"
+                :title="`${getCount(sticker.code)} na coleção (${duplicateExtra(getCount(sticker.code))} além da primeira)`"
+              >
+                +{{ duplicateBadgeCount(getCount(sticker.code)) }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="countAdjustOpen"
+      :title="
+        countAdjustSticker
+          ? `Figurinha ${countAdjustSticker.name}`
+          : 'Figurinha'
+      "
+      :ui="{ content: 'sm:max-w-md' }"
+    >
+      <template #body>
+        <p v-if="countAdjustSticker" class="text-sm text-muted">
+          {{ countAdjustSticker.code }} · na coleção:
+          <span class="font-medium text-neutral-900 dark:text-neutral-100">{{
+            getCount(countAdjustSticker.code)
+          }}</span>
+        </p>
+      </template>
+      <template #footer>
+        <div class="flex w-full flex-wrap items-center gap-2">
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-minus"
+            label="Remover uma"
+            class="min-w-0 flex-1 sm:flex-initial"
+            :disabled="!countAdjustSticker || getCount(countAdjustSticker.code) < 1"
+            @click="countAdjustDecrement"
+          />
+          <UButton
+            color="primary"
+            icon="i-lucide-plus"
+            label="Adicionar uma"
+            class="min-w-0 flex-1 sm:flex-initial"
+            :disabled="!countAdjustSticker"
+            @click="countAdjustIncrement"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <UModal
       v-model:open="clearCollectionModalOpen"

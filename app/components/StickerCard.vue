@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { duplicateBadgeCount } from "~/utils/duplicateDisplay";
+
 const props = defineProps<{ sticker: Sticker }>();
 
 const { getCount, increment, decrement } = useCollection();
 
 const count = computed(() => getCount(props.sticker.code));
 const owned = computed(() => count.value >= 1);
-const duplicateCount = computed(() => Math.max(0, count.value - 1));
+const badgeCount = computed(() => duplicateBadgeCount(count.value));
 </script>
 
 <template>
@@ -27,10 +29,11 @@ const duplicateCount = computed(() => Math.max(0, count.value - 1));
         {{ sticker.name }}
       </div>
       <span
-        v-if="duplicateCount > 0"
+        v-if="badgeCount > 0"
         class="absolute top-0 right-0 translate-x-1 -translate-y-1 rounded-full bg-neutral-900 px-1 py-0.5 text-xs text-white dark:bg-neutral-100 dark:text-neutral-900"
+        :title="`${count} na coleção`"
       >
-        +{{ duplicateCount }}
+        +{{ badgeCount }}
       </span>
     </div>
   </button>

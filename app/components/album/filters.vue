@@ -17,7 +17,7 @@ const sortModes: { label: string; value: GroupSortMode }[] = [
 </script>
 
 <template>
-  <div class="flex gap-2 py-2">
+  <div class="flex flex-wrap gap-2 py-2 max-lg:gap-2 lg:gap-2 lg:py-2">
     <UFieldGroup size="sm">
       <UButton
         v-for="f in filters"
