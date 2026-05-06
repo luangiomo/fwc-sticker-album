@@ -34,7 +34,7 @@ export type Album = {
 
 export type Collection = Record<string, number>;
 
-export type FilterMode = "all" | "missing" | "duplicates";
+export type FilterMode = "all" | "missing";
 
 export type GroupSortMode = "default" | "alphabetic" | "owned";
 

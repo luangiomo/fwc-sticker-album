@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useMediaQuery } from "@vueuse/core";
 import { scrollIntoViewBelowSticky } from "~/utils/scrollBelowSticky";
-import { duplicateBadgeCount, duplicateExtra } from "~/utils/duplicateDisplay";
+import { duplicateBadgeCount } from "~/utils/duplicateDisplay";
 import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
 
 const isLg = useMediaQuery("(min-width: 1024px)");
@@ -13,7 +13,6 @@ const {
   increment,
   decrement,
   filterStickers,
-  filter,
   groupSort,
   clearCollection,
   clearGroup,
@@ -146,12 +145,10 @@ function onTeamSelect(groupId: string) {
   });
 }
 
-/** Selo +N; no filtro Repetidas só mostra a partir de 3 no total (evita +1 só). */
+/** Selo +N nas células quando há cópias extra. */
 function showDuplicateCountLabel(code: string) {
   const n = getCount(code);
-  if (duplicateBadgeCount(n) <= 0) return false;
-  if (filter.value === "duplicates") return duplicateExtra(n) > 1;
-  return true;
+  return duplicateBadgeCount(n) > 0;
 }
 
 const mobileStickerGestures = useMobileTapHoldDecrement(() => !isLg.value);

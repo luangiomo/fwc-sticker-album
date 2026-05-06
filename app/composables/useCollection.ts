@@ -23,7 +23,11 @@ function normalizeUiConfig(raw: UiConfigRaw | null | undefined): LocalAppConfig 
   const f = raw?.filter;
   const s = raw?.groupSort;
   base.filter =
-    f === "all" || f === "missing" || f === "duplicates" ? f : base.filter;
+    f === "all" || f === "missing"
+      ? f
+      : f === "duplicates"
+        ? "all"
+        : base.filter;
   base.groupSort =
     s === "default" || s === "alphabetic" || s === "owned" ? s : base.groupSort;
   base.stickerEditLocked = raw?.stickerEditLocked === true;
@@ -175,8 +179,6 @@ export const useCollection = () => {
     switch (filter.value) {
       case "missing":
         return stickers.filter((s) => getCount(s.code) === 0);
-      case "duplicates":
-        return stickers.filter((s) => getCount(s.code) > 1);
       default:
         return stickers;
     }
