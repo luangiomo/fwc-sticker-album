@@ -25,10 +25,12 @@ function extrasInGroup(dupStickers: Sticker[]) {
   );
 }
 
+/** Ordem do álbum (número da figurinha), não ordem lexicográfica do texto "9" vs "11". */
 function sortDupStickers(stickers: Sticker[]) {
-  return [...stickers].sort((a, b) =>
-    a.name.localeCompare(b.name, "pt", { sensitivity: "base" })
-  );
+  return [...stickers].sort((a, b) => {
+    if (a.number !== b.number) return a.number - b.number;
+    return a.code.localeCompare(b.code);
+  });
 }
 
 const duplicateRows = computed(() => {

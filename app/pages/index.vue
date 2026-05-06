@@ -135,6 +135,13 @@ function openGroupDetail(row: { id: string }) {
   groupDetailOpen.value = true;
 }
 
+/** Figurinhas visíveis no modal da equipa (respeita Todas / Faltantes). */
+const groupDetailVisibleStickers = computed(() => {
+  const g = groupDetailGroup.value;
+  if (!g) return [];
+  return filterStickers(g.stickers);
+});
+
 function onTeamSelect(groupId: string) {
   nextTick(() => {
     const el = document.getElementById(groupId);
@@ -500,15 +507,22 @@ const mobileClearMenuGroups = computed(() => [
         </div>
       </template>
       <template #body>
-        <div
-          v-if="groupDetailGroup"
-          class="max-h-[min(65vh,32rem)] overflow-y-auto pr-1 -mr-1"
-        >
-          <div
-            class="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8 max-lg:gap-1.5 lg:gap-1.5"
-          >
-            <button
-              v-for="sticker in groupDetailGroup.stickers"
+            <div
+              v-if="groupDetailGroup"
+              class="max-h-[min(65vh,32rem)] overflow-y-auto pr-1 -mr-1"
+            >
+              <p
+                v-if="groupDetailVisibleStickers.length === 0"
+                class="text-sm text-muted"
+              >
+                Nenhuma figurinha neste filtro.
+              </p>
+              <div
+                v-else
+                class="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8 max-lg:gap-1.5 lg:gap-1.5"
+              >
+                <button
+                  v-for="sticker in groupDetailVisibleStickers"
               :key="sticker.id"
               type="button"
               class="relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-9 lg:min-h-0 lg:rounded-sm"
