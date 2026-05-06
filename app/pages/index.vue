@@ -373,13 +373,17 @@ const mobileClearMenuGroups = computed(() => [
               <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
                 {{ item.slug }}
               </h3>
-              <span class="text-xs text-muted">·</span>
+              <span
+                class="mx-px size-0.5 rounded-full bg-neutral-400 dark:bg-neutral-500"
+              />
               <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
                 {{ item.name }}
               </h3>
-              <span class="text-xs text-muted">·</span>
               <span
-                class="shrink-0 tabular-nums text-[11px] leading-tight text-muted"
+                class="mx-px size-0.5 rounded-full bg-neutral-400 dark:bg-neutral-500"
+              />
+              <span
+                class="shrink-0 tabular-nums text-xs leading-tight text-muted"
               >
                 {{ formatTeamProgress(item.ownedInGroup, item.totalInGroup) }}
               </span>

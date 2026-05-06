@@ -16,7 +16,7 @@ const sortOptions: { label: string; value: DupGroupSortMode }[] = [
 ];
 
 const { groups } = useAlbum();
-const { getCount } = useCollection();
+const { getCount, stats } = useCollection();
 
 function extrasInGroup(dupStickers: Sticker[]) {
   return dupStickers.reduce(
@@ -61,27 +61,23 @@ const duplicateRows = computed(() => {
   return copy;
 });
 
-/** Uma célula por exemplar físico na coleção (ex.: 5 iguais → 5 itens). */
+/** Uma célula por cópia repetida (ex.: 5 na coleção → 4 repetidas, não 5). */
 function expandedDuplicateCells(dupStickers: Sticker[]) {
   const cells: { key: string; sticker: Sticker }[] = [];
   for (const s of dupStickers) {
-    const n = getCount(s.code);
-    for (let i = 0; i < n; i++) {
+    const extras = duplicateExtra(getCount(s.code));
+    for (let i = 0; i < extras; i++) {
       cells.push({ key: `${s.code}-${i}`, sticker: s });
     }
   }
   return cells;
-}
-
-function totalDuplicateCopies(dupStickers: Sticker[]) {
-  return dupStickers.reduce((acc, s) => acc + getCount(s.code), 0);
 }
 </script>
 
 <template>
   <UModal
     v-model:open="open"
-    title="Figurinhas repetidas"
+    :title="`Figurinhas repetidas (${stats.duplicates})`"
     :ui="{
       content:
         'w-[calc(100vw-1.5rem)] max-w-xl max-h-[min(90vh,44rem)] flex flex-col',
@@ -89,7 +85,7 @@ function totalDuplicateCopies(dupStickers: Sticker[]) {
   >
     <template #body>
       <div class="mb-4 flex flex-wrap items-center gap-2">
-        <span class="text-[11px] text-muted">Ordenar equipas</span>
+        <!-- <span class="text-[11px] text-muted">Ordenar equipas</span> -->
         <UFieldGroup size="sm" class="min-w-0 flex-1">
           <UButton
             v-for="opt in sortOptions"
@@ -124,7 +120,7 @@ function totalDuplicateCopies(dupStickers: Sticker[]) {
                 {{ row.group.name }} ({{ row.group.slug }})
               </h3>
               <p class="mt-0.5 text-xs text-muted tabular-nums">
-                {{ totalDuplicateCopies(row.dupStickers) }} repetidas
+                {{ extrasInGroup(row.dupStickers) }} repetidas
               </p>
             </div>
           </div>
