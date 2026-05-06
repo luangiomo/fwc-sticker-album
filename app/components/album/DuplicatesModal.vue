@@ -16,7 +16,7 @@ const sortOptions: { label: string; value: DupGroupSortMode }[] = [
 ];
 
 const { groups } = useAlbum();
-const { getCount, stats } = useCollection();
+const { getCount, decrement, stickerEditLocked, stats } = useCollection();
 
 function extrasInGroup(dupStickers: Sticker[]) {
   return dupStickers.reduce(
@@ -130,13 +130,17 @@ function expandedDuplicateCells(dupStickers: Sticker[]) {
           <div
             class="mt-4 grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8 max-lg:gap-1.5 lg:gap-1.5"
           >
-            <div
+            <button
               v-for="cell in expandedDuplicateCells(row.dupStickers)"
               :key="cell.key"
-              class="relative flex min-h-11 cursor-default items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none lg:h-9 lg:min-h-0 lg:rounded-sm bg-blue-600 text-white dark:bg-blue-500 dark:text-blue-50"
+              type="button"
+              :disabled="stickerEditLocked"
+              class="relative flex min-h-11 items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none lg:h-9 lg:min-h-0 lg:rounded-sm bg-blue-600 text-white dark:bg-blue-500 dark:text-blue-50 transition-opacity"
+              :class="stickerEditLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95'"
+              @click="decrement(cell.sticker.code)"
             >
               <span class="px-0.5">{{ cell.sticker.name }}</span>
-            </div>
+            </button>
           </div>
         </div>
       </div>
