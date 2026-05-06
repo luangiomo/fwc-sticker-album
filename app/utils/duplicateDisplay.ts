@@ -4,11 +4,13 @@ export function duplicateExtra(count: number): number {
 }
 
 /**
- * Número exibido no selo "+N": o verde já indica 1 na coleção; a partir de 3
- * cópias extras (≥ 4 no total) o selo não conta uma delas (ex.: 4 no total → +2 em vez de +3).
+ * Número exibido no selo "+N": o slot verde já representa uma unidade; o selo
+ * mostra cópias além dessa, menos uma “referência” (troca comum no álbum).
+ * Ex.: 2 → +1, 3 → +1, 4 → +2, 5 → +3.
  */
 export function duplicateBadgeCount(count: number): number {
   const extra = duplicateExtra(count);
   if (extra <= 0) return 0;
-  return extra >= 3 ? extra - 1 : extra;
+  if (extra === 1) return 1;
+  return extra - 1;
 }

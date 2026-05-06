@@ -97,16 +97,16 @@
           "id": "be7ea381-ac7e-4a3b-9b6a-11471b3512d4",
           "number": 10,
           "slug": "FWC",
-          "code": "FW10",
-          "name": "FW 10",
+          "code": "FWC10",
+          "name": "FWC 10",
           "variant": "chromo"
         },
         {
           "id": "2e0ac10d-742b-4e4e-a2db-a3cc6b239fcd",
           "number": 11,
           "slug": "FWC",
-          "code": "FW11",
-          "name": "FW 11",
+          "code": "FWC11",
+          "name": "FWC 11",
           "variant": "chromo"
         },
         {
@@ -121,56 +121,56 @@
           "id": "7089e243-253c-4618-999d-2c64c29eb14e",
           "number": 13,
           "slug": "FWC",
-          "code": "FW13",
-          "name": "FW 13",
+          "code": "FWC13",
+          "name": "FWC 13",
           "variant": "chromo"
         },
         {
           "id": "feae9411-30e5-4ae0-9cf5-0e9ea36cd286",
           "number": 14,
           "slug": "FWC",
-          "code": "FW14",
-          "name": "FW 14",
+          "code": "FWC14",
+          "name": "FWC 14",
           "variant": "chromo"
         },
         {
           "id": "b7e8783c-e036-405b-86ee-71352b3b7580",
           "number": 15,
           "slug": "FWC",
-          "code": "FW15",
-          "name": "FW 15",
+          "code": "FWC15",
+          "name": "FWC 15",
           "variant": "chromo"
         },
         {
           "id": "fe1cc69c-a1ba-465c-868e-5743b632e1cb",
           "number": 16,
           "slug": "FWC",
-          "code": "FW16",
-          "name": "FW 16",
+          "code": "FWC16",
+          "name": "FWC 16",
           "variant": "chromo"
         },
         {
           "id": "6095584b-44f1-43fb-85ce-e60803c72718",
           "number": 17,
           "slug": "FWC",
-          "code": "FW17",
-          "name": "FW 17",
+          "code": "FWC17",
+          "name": "FWC 17",
           "variant": "chromo"
         },
         {
           "id": "431ee3e8-e842-4a63-b378-607264dcc00a",
           "number": 18,
           "slug": "FWC",
-          "code": "FW18",
-          "name": "FW 18",
+          "code": "FWC18",
+          "name": "FWC 18",
           "variant": "chromo"
         },
         {
           "id": "70cdbbc2-b88d-4119-b78e-a769e1293552",
           "number": 19,
           "slug": "FWC",
-          "code": "FW19",
-          "name": "FW 19",
+          "code": "FWC19",
+          "name": "FWC 19",
           "variant": "chromo"
         }
       ]

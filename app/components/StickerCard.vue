@@ -1,19 +1,49 @@
 <script setup lang="ts">
+import { useMediaQuery } from "@vueuse/core";
 import { duplicateBadgeCount } from "~/utils/duplicateDisplay";
 
 const props = defineProps<{ sticker: Sticker }>();
+
+const isLg = useMediaQuery("(min-width: 1024px)");
+const mobilePress = useMobileTapHoldDecrement(() => !isLg.value);
 
 const { getCount, increment, decrement } = useCollection();
 
 const count = computed(() => getCount(props.sticker.code));
 const owned = computed(() => count.value >= 1);
 const badgeCount = computed(() => duplicateBadgeCount(count.value));
+
+function onCardClick() {
+  if (isLg.value) {
+    increment(props.sticker.code);
+    return;
+  }
+  if (mobilePress.consumeSkipFollowingClick()) return;
+  increment(props.sticker.code);
+}
+
+function onCardContextMenu(e: MouseEvent) {
+  if (isLg.value) {
+    decrement(props.sticker.code);
+    return;
+  }
+  if (e.button !== 2) return;
+  decrement(props.sticker.code);
+}
 </script>
 
 <template>
   <button
-    @click="increment(sticker.code)"
-    @contextmenu.prevent="decrement(sticker.code)"
+    type="button"
+    @click="onCardClick"
+    @pointerdown="
+      mobilePress.onPointerDown($event, () => decrement(sticker.code))
+    "
+    @pointerup="
+      mobilePress.onPointerUp($event, () => increment(sticker.code))
+    "
+    @pointercancel="mobilePress.onPointerCancel()"
+    @contextmenu.prevent="onCardContextMenu"
     class="cursor-pointer"
   >
     <div

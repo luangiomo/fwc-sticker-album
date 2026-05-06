@@ -1,8 +1,46 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/*
+  Nuxt UI defaults `ui.colors.neutral` to the `slate` palette, so components ignore `--color-old-neutral-*`.
+  Set `neutral: "neutral"` in app.config.ts so semantic neutral uses `--color-old-neutral-*` (see Nuxt UI colors plugin).
+*/
+@theme {
+  --color-neutral-50: #f4f4f4;
+  --color-neutral-100: #ebebeb;
+}
+
 :root {
   --font-sans: "Plus Jakarta Sans", sans-serif;
+  --color-old-neutral-50: #f4f4f4;
+  --color-old-neutral-100: #ebebeb;
+}
+
+/* True gray ramp for dark mode (was slate-tinted); color-mode sets `dark` on <html> */
+:root.dark,
+html.dark {
+  --color-old-neutral-50: #fafafa;
+  --color-old-neutral-100: #f5f5f5;
+  --color-old-neutral-200: #e5e5e5;
+  --color-old-neutral-300: #d4d4d4;
+  --color-old-neutral-400: #a3a3a3;
+  --color-old-neutral-500: #737373;
+  --color-old-neutral-600: #525252;
+  --color-old-neutral-700: #2a2a2a;
+  --color-old-neutral-800: #292929;
+  --color-old-neutral-900: #232323;
+  --color-old-neutral-950: #1f1f1f;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #2a2a2a;
+  --color-neutral-800: #292929;
+  --color-neutral-900: #232323;
+  --color-neutral-950: #1f1f1f;
 }
 
 body {

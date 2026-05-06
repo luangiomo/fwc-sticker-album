@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, useTemplateRef } from "vue";
+import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
 
 const { groups } = useAlbum();
 const targetIndex = ref(0);
@@ -27,17 +28,6 @@ function scrollToItem(index: number) {
   });
 }
 
-function groupSpriteStyle(group: Group) {
-  const scale = 0.2666667;
-  return {
-    width: `${group.image.width * scale}px`,
-    height: `${group.image.height * scale}px`,
-    backgroundImage: `url(${group.image.sprite})`,
-    backgroundSize: `320px 160px`,
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: `${-group.image.x * scale}px ${-group.image.y * scale}px`,
-  };
-}
 </script>
 
 <template>
@@ -55,7 +45,7 @@ function groupSpriteStyle(group: Group) {
       <div :key="item.id" :id="item.id" class="space-y-2 mb-2">
         <div class="flex items-center gap-2">
           <div
-            class="rounded-full size-full aspect-square bg-cover bg-center"
+            class="rounded-full shrink-0 aspect-square"
             :style="groupSpriteStyle(item)"
           />
           <span class="text-sm font-medium">{{ item.name }}</span>

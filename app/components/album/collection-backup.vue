@@ -9,7 +9,17 @@ import {
   type PrintRow,
 } from "~/utils/collectionBackup";
 
-const { collection, getCount, replaceCollection, stats } = useCollection();
+type ExtraMenuGroups = {
+  label: string;
+  icon?: string;
+  onSelect?: () => void;
+  color?: "error" | "neutral" | "primary" | "secondary" | "success" | "info" | "warning";
+}[][];
+
+const props = defineProps<{
+  /** Itens extra após export/import (ex.: limpar coleção no mobile). */
+  appendItems?: ExtraMenuGroups;
+}>();
 const { groups } = useAlbum();
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
@@ -146,32 +156,39 @@ const importModalTitle = computed(() => {
   return "Importação";
 });
 
-const dropdownItems = computed(() => [
-  [
-    {
-      label: "Exportar CSV",
-      icon: "i-lucide-file-spreadsheet",
-      onSelect: exportCsv,
-    },
-    {
-      label: "Exportar TXT",
-      icon: "i-lucide-file-text",
-      onSelect: exportTxt,
-    },
-  ],
-  [
-    {
-      label: "Importar arquivo…",
-      icon: "i-lucide-upload",
-      onSelect: () => triggerImportPick(),
-    },
-    {
-      label: "Imprimir / salvar em PDF",
-      icon: "i-lucide-printer",
-      onSelect: printList,
-    },
-  ],
-]);
+const dropdownItems = computed(() => {
+  const core = [
+    [
+      {
+        label: "Exportar CSV",
+        icon: "i-lucide-file-spreadsheet",
+        onSelect: exportCsv,
+      },
+      {
+        label: "Exportar TXT",
+        icon: "i-lucide-file-text",
+        onSelect: exportTxt,
+      },
+    ],
+    [
+      {
+        label: "Importar arquivo…",
+        icon: "i-lucide-upload",
+        onSelect: () => triggerImportPick(),
+      },
+      {
+        label: "Imprimir / salvar em PDF",
+        icon: "i-lucide-printer",
+        onSelect: printList,
+      },
+    ],
+  ] as ExtraMenuGroups;
+  const extra = props.appendItems;
+  if (extra?.length) {
+    return [...core, ...extra] as ExtraMenuGroups;
+  }
+  return core;
+});
 </script>
 
 <template>
@@ -189,11 +206,22 @@ const dropdownItems = computed(() => [
         color="neutral"
         variant="outline"
         size="sm"
-        icon="i-lucide-save"
-        label="Cópia"
-        trailing-icon="i-lucide-chevron-down"
         class="shrink-0"
-      />
+        aria-label="Menu: cópia, exportar e outras ações"
+      >
+        <UIcon
+          name="i-lucide-menu"
+          class="size-4.5 lg:hidden"
+        />
+        <span class="hidden items-center gap-1.5 lg:inline-flex">
+          <UIcon name="i-lucide-save" class="size-4 shrink-0" />
+          <span>Cópia</span>
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="size-4 shrink-0 opacity-70"
+          />
+        </span>
+      </UButton>
     </UDropdownMenu>
 
     <UModal

@@ -94,6 +94,14 @@ export const useCollection = () => {
     collection.value = {};
   }
 
+  function clearGroup(group: Group) {
+    const cur = { ...(collection.value ?? {}) };
+    for (const s of group.stickers) {
+      delete cur[s.code];
+    }
+    collection.value = cur;
+  }
+
   /** Replaces the whole cookie-backed collection (e.g. import on another device). */
   function replaceCollection(next: Collection) {
     const cleaned: Collection = {};
@@ -148,6 +156,7 @@ export const useCollection = () => {
     decrement,
     resetCount,
     clearCollection,
+    clearGroup,
     replaceCollection,
     stats,
     progress,

@@ -2,6 +2,7 @@
 import { useMediaQuery } from "@vueuse/core";
 import { scrollIntoViewBelowSticky } from "~/utils/scrollBelowSticky";
 import { duplicateBadgeCount, duplicateExtra } from "~/utils/duplicateDisplay";
+import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
 
 const isLg = useMediaQuery("(min-width: 1024px)");
 
@@ -14,10 +15,13 @@ const {
   filter,
   groupSort,
   clearCollection,
+  clearGroup,
   stats,
 } = useCollection();
 
 const clearCollectionModalOpen = ref(false);
+const clearGroupModalOpen = ref(false);
+const clearGroupTarget = ref<Group | null>(null);
 
 const groupDetailOpen = ref(false);
 const groupDetailGroup = ref<Group | null>(null);
@@ -35,19 +39,52 @@ function confirmClearCollection() {
   clearCollectionModalOpen.value = false;
 }
 
+function openClearGroupConfirm() {
+  const g = groupDetailGroup.value;
+  if (!g) return;
+  clearGroupTarget.value = g;
+  clearGroupModalOpen.value = true;
+}
+
+function confirmClearGroup() {
+  const g = clearGroupTarget.value;
+  if (g) clearGroup(g);
+  clearGroupModalOpen.value = false;
+  clearGroupTarget.value = null;
+  groupDetailOpen.value = false;
+}
+
+function formatTeamProgress(owned: number, total: number) {
+  if (total <= 0) return "0/0 · 0%";
+  const pct = Math.round((owned / total) * 100);
+  return `${owned}/${total} · ${pct}%`;
+}
+
+function groupOwnedProgressLabel(group: Group | null) {
+  if (!group) return "";
+  const owned = group.stickers.filter((s) => getCount(s.code) >= 1).length;
+  return formatTeamProgress(owned, group.stickers.length);
+}
+
 const renderedGroups = computed(() => {
   const rows = groups
     .map((g) => {
+      const totalInGroup = g.stickers.length;
       const ownedInGroup = g.stickers.filter(
-        (s) => getCount(s.code) >= 1,
+        (s) => getCount(s.code) >= 1
       ).length;
-      return { ...g, stickers: filterStickers(g.stickers), ownedInGroup };
+      return {
+        ...g,
+        stickers: filterStickers(g.stickers),
+        ownedInGroup,
+        totalInGroup,
+      };
     })
     .filter((g) => g.stickers.length > 0);
 
   if (groupSort.value === "alphabetic") {
     return [...rows].sort((a, b) =>
-      a.slug.localeCompare(b.slug, "pt", { sensitivity: "base" }),
+      a.slug.localeCompare(b.slug, "pt", { sensitivity: "base" })
     );
   }
 
@@ -80,17 +117,6 @@ const {
   STICKER_FIND_INPUT_ID,
 } = useAlbumGridNav(renderedGroups);
 
-function groupSpriteStyle(group: Group, scale = 0.2666667) {
-  return {
-    width: `${group.image.width * scale}px`,
-    height: `${group.image.height * scale}px`,
-    backgroundImage: `url(${group.image.sprite})`,
-    backgroundSize: `320px 160px`,
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: `${-group.image.x * scale}px ${-group.image.y * scale}px`,
-  };
-}
-
 function openGroupDetail(row: { id: string }) {
   const g = groups.find((x) => x.id === row.id) ?? null;
   if (!g) return;
@@ -116,17 +142,8 @@ function showDuplicateCountLabel(code: string) {
   return true;
 }
 
-const countAdjustOpen = ref(false);
-const countAdjustSticker = ref<Sticker | null>(null);
-
-watch(countAdjustOpen, (open) => {
-  if (!open) countAdjustSticker.value = null;
-});
-
-function openCountAdjust(sticker: Sticker) {
-  countAdjustSticker.value = sticker;
-  countAdjustOpen.value = true;
-}
+const mobileStickerGestures = useMobileTapHoldDecrement(() => !isLg.value);
+const mobileGroupDetailGestures = useMobileTapHoldDecrement(() => !isLg.value);
 
 function onStickerCellClick(sticker: Sticker, gIdx: number, sIdx: number) {
   if (isLg.value) {
@@ -135,71 +152,84 @@ function onStickerCellClick(sticker: Sticker, gIdx: number, sIdx: number) {
     afterIncrementSticker();
     return;
   }
-  if (getCount(sticker.code) >= 1) {
-    openCountAdjust(sticker);
-    return;
-  }
+  if (mobileStickerGestures.consumeSkipFollowingClick()) return;
   increment(sticker.code);
+  setFocus(gIdx, sIdx);
+  afterIncrementSticker();
 }
 
-function onStickerContextMenu(code: string, gIdx: number, sIdx: number) {
-  if (!isLg.value) return;
+function onStickerContextMenu(
+  code: string,
+  gIdx: number,
+  sIdx: number,
+  e: MouseEvent,
+) {
+  if (isLg.value) {
+    decrement(code);
+    setFocus(gIdx, sIdx);
+    return;
+  }
+  if (e.button !== 2) return;
   decrement(code);
   setFocus(gIdx, sIdx);
 }
 
-function onGroupDetailStickerInteract(sticker: Sticker) {
+function onGroupDetailStickerClick(sticker: Sticker) {
   if (isLg.value) {
     increment(sticker.code);
     afterIncrementSticker();
     return;
   }
-  if (getCount(sticker.code) >= 1) {
-    openCountAdjust(sticker);
-    return;
-  }
+  if (mobileGroupDetailGestures.consumeSkipFollowingClick()) return;
   increment(sticker.code);
+  afterIncrementSticker();
 }
 
-function onGroupDetailStickerContextMenu(sticker: Sticker) {
-  if (!isLg.value) return;
+function onGroupDetailStickerContextMenu(sticker: Sticker, e: MouseEvent) {
+  if (isLg.value) {
+    decrement(sticker.code);
+    return;
+  }
+  if (e.button !== 2) return;
   decrement(sticker.code);
 }
 
-function countAdjustDecrement() {
-  const s = countAdjustSticker.value;
-  if (!s) return;
-  decrement(s.code);
-  if (getCount(s.code) < 1) countAdjustOpen.value = false;
-}
-
-function countAdjustIncrement() {
-  const s = countAdjustSticker.value;
-  if (!s) return;
-  increment(s.code);
-}
+const mobileClearMenuGroups = computed(() => [
+  [
+    {
+      label: "Limpar coleção",
+      icon: "i-lucide-trash-2",
+      color: "error" as const,
+      onSelect: () => {
+        if (stats.value.owned === 0) return;
+        clearCollectionModalOpen.value = true;
+      },
+    },
+  ],
+]);
 </script>
 
 <template>
   <UContainer class="px-3 py-4 md:px-5 md:py-5 lg:px-4 lg:py-8">
     <div
       data-sticky-page-header
-      class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 backdrop-blur-sm pb-2 pt-0 dark:border-neutral-800 dark:bg-neutral-950/95 max-lg:pb-2.5 lg:pb-2"
+      class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 backdrop-blur-sm py-2 dark:border-neutral-800 dark:bg-neutral-950/95"
     >
-      <div class="flex flex-col gap-2 max-lg:gap-3 lg:gap-1">
+      <div class="flex flex-col lg:gap-1">
         <div
-          class="order-1 max-lg:border-0 lg:order-4 lg:border-t lg:border-neutral-200/90 lg:pt-2 dark:lg:border-neutral-800"
+          class="flex flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
         >
-          <AlbumGroupStrip @navigate="onTeamSelect" />
-        </div>
-
-        <div
-          class="order-2 flex flex-col gap-1.5 lg:order-1 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
-        >
-          <AlbumFilters
-            v-if="!stickerFindOpen || isLg"
-            class="min-w-0 lg:flex-1"
-          />
+          <div
+            v-if="!isLg && !stickerFindOpen"
+            class="flex w-full min-w-0 items-center gap-2"
+          >
+            <AlbumFilters class="min-w-0 flex-1" />
+            <AlbumCollectionBackup
+              :append-items="mobileClearMenuGroups"
+              class="shrink-0"
+            />
+          </div>
+          <AlbumFilters v-else-if="isLg" class="min-w-0 lg:flex-1" />
           <div
             v-if="stickerFindOpen"
             data-sticker-find
@@ -267,13 +297,20 @@ function countAdjustIncrement() {
           </div>
         </div>
 
+        <AlbumProgress />
+
         <p
           v-if="stickerFindOpen && isLg"
-          class="order-3 hidden text-[11px] leading-snug text-muted lg:order-2 lg:block lg:text-right"
+          class="hidden text-[11px] leading-snug text-muted lg:block lg:text-right"
         >
           Esc encerra a busca · Ctrl/Cmd+Shift+K busca por equipe
         </p>
-        <AlbumProgress class="order-4 hidden lg:block" />
+
+        <div
+          class="hidden max-lg:border-0 lg:block lg:border-t lg:border-neutral-200/90 lg:pt-2 dark:lg:border-neutral-800"
+        >
+          <AlbumGroupStrip @navigate="onTeamSelect" />
+        </div>
       </div>
     </div>
 
@@ -298,11 +335,25 @@ function countAdjustIncrement() {
             @keydown.enter.prevent="openGroupDetail(item)"
             @keydown.space.prevent="openGroupDetail(item)"
           />
-          <h3
-            class="min-w-0 flex-1 truncate text-sm font-medium leading-tight lg:hidden"
+          <button
+            type="button"
+            class="flex min-h-0 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm text-left outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
+            :aria-label="`Abrir figurinhas de ${item.name}`"
+            @click="openGroupDetail(item)"
           >
-            {{ item.name }}
-          </h3>
+            <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+              {{ item.slug }}
+            </h3>
+            <span class="text-xs text-muted">·</span>
+            <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+              {{ item.name }}
+            </h3>
+            <span
+              class="shrink-0 tabular-nums text-[11px] leading-tight text-muted"
+            >
+              {{ formatTeamProgress(item.ownedInGroup, item.totalInGroup) }}
+            </span>
+          </button>
         </div>
         <div
           class="grid w-full min-w-0 grid-cols-5 gap-1.5 lg:grid-cols-20 lg:gap-1 lg:flex-1"
@@ -314,15 +365,30 @@ function countAdjustIncrement() {
             :tabindex="cellTabindex(gIdx, sIdx)"
             :data-grid-pos="cellGridPos(gIdx, sIdx)"
             @click="onStickerCellClick(sticker, gIdx, sIdx)"
+            @pointerdown="
+              mobileStickerGestures.onPointerDown($event, () => {
+                decrement(sticker.code);
+                setFocus(gIdx, sIdx);
+              })
+            "
+            @pointerup="
+              mobileStickerGestures.onPointerUp($event, () => {
+                increment(sticker.code);
+                setFocus(gIdx, sIdx);
+                afterIncrementSticker();
+              })
+            "
+            @pointercancel="mobileStickerGestures.onPointerCancel()"
             @contextmenu.prevent="
-              onStickerContextMenu(sticker.code, gIdx, sIdx)
+              onStickerContextMenu(sticker.code, gIdx, sIdx, $event)
             "
             :class="[
               'relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-8 lg:min-h-0 lg:rounded-sm lg:px-0',
               getCount(sticker.code) >= 1
                 ? 'bg-green-600 text-white dark:bg-green-500 dark:text-green-800'
                 : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
-              gIdx === focusGroupIndex &&
+              isLg &&
+                gIdx === focusGroupIndex &&
                 sIdx === focusStickerIndex &&
                 'ring-2 ring-primary ring-offset-1 ring-offset-neutral-50 dark:ring-offset-neutral-950',
             ]"
@@ -333,7 +399,7 @@ function countAdjustIncrement() {
             <span
               v-if="showDuplicateCountLabel(sticker.code)"
               class="pointer-events-none absolute -right-1 -top-1 z-1 min-w-4 rounded px-0.5 py-px text-center text-[9px] font-semibold leading-none tabular-nums bg-neutral-900 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-900"
-              :title="`${getCount(sticker.code)} na coleção (${duplicateExtra(getCount(sticker.code))} além da primeira)`"
+              :title="`${getCount(sticker.code)} na coleção · +${duplicateBadgeCount(getCount(sticker.code))} no selo`"
             >
               +{{ duplicateBadgeCount(getCount(sticker.code)) }}
             </span>
@@ -347,34 +413,48 @@ function countAdjustIncrement() {
     <UModal
       v-model:open="groupDetailOpen"
       :ui="{
-        content:
-          'w-[calc(100vw-1.5rem)] max-w-xl max-h-[90vh] flex flex-col',
+        content: 'w-[calc(100vw-1.5rem)] max-w-xl max-h-[90vh] flex flex-col',
       }"
     >
       <template #header="{ close }">
         <div class="flex w-full items-start gap-3">
           <div
             v-if="groupDetailGroup"
-            class="rounded-md shrink-0 border border-neutral-200 bg-cover bg-center dark:border-neutral-700"
-            :style="groupSpriteStyle(groupDetailGroup, 0.45)"
+            class="rounded-md shrink-0 border border-neutral-200 dark:border-neutral-700"
+            :style="groupSpriteStyle(groupDetailGroup)"
           />
           <div class="min-w-0 flex-1 pt-0.5">
             <h2 class="truncate text-lg leading-tight font-semibold">
               {{ groupDetailGroup?.name }}
             </h2>
-            <p class="mt-0.5 text-xs text-muted">
-              {{ groupDetailGroup?.stickers.length }} figurinhas
+            <p class="mt-0.5 text-xs text-muted tabular-nums">
+              {{ groupOwnedProgressLabel(groupDetailGroup) }}
             </p>
           </div>
-          <UButton
-            icon="i-lucide-x"
-            color="neutral"
-            variant="ghost"
-            square
-            class="shrink-0"
-            aria-label="Fechar"
-            @click="close"
-          />
+          <div class="flex shrink-0 items-center gap-0.5">
+            <UButton
+              icon="i-lucide-trash-2"
+              color="error"
+              variant="ghost"
+              square
+              class="shrink-0"
+              :disabled="
+                !groupDetailGroup ||
+                !groupDetailGroup.stickers.some((s) => getCount(s.code) >= 1)
+              "
+              aria-label="Limpar todas as figurinhas desta equipe"
+              @click="openClearGroupConfirm"
+            />
+            <UButton
+              icon="i-lucide-x"
+              color="neutral"
+              variant="ghost"
+              square
+              class="shrink-0"
+              aria-label="Fechar"
+              @click="close"
+            />
+          </div>
         </div>
       </template>
       <template #body>
@@ -395,59 +475,31 @@ function countAdjustIncrement() {
                   ? 'bg-green-600 text-white dark:bg-green-500 dark:text-green-800'
                   : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
               ]"
-              @click="onGroupDetailStickerInteract(sticker)"
-              @contextmenu.prevent="onGroupDetailStickerContextMenu(sticker)"
+              @click="onGroupDetailStickerClick(sticker)"
+              @pointerdown="
+                mobileGroupDetailGestures.onPointerDown($event, () => {
+                  decrement(sticker.code);
+                })
+              "
+              @pointerup="
+                mobileGroupDetailGestures.onPointerUp($event, () => {
+                  increment(sticker.code);
+                  afterIncrementSticker();
+                })
+              "
+              @pointercancel="mobileGroupDetailGestures.onPointerCancel()"
+              @contextmenu.prevent="onGroupDetailStickerContextMenu(sticker, $event)"
             >
               <span class="px-0.5">{{ sticker.name }}</span>
               <span
                 v-if="showDuplicateCountLabel(sticker.code)"
                 class="pointer-events-none absolute -right-1 -top-1 z-1 min-w-4 rounded px-0.5 py-px text-center text-[9px] font-semibold leading-none tabular-nums bg-neutral-900 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-900"
-                :title="`${getCount(sticker.code)} na coleção (${duplicateExtra(getCount(sticker.code))} além da primeira)`"
+                :title="`${getCount(sticker.code)} na coleção · +${duplicateBadgeCount(getCount(sticker.code))} no selo`"
               >
                 +{{ duplicateBadgeCount(getCount(sticker.code)) }}
               </span>
             </button>
           </div>
-        </div>
-      </template>
-    </UModal>
-
-    <UModal
-      v-model:open="countAdjustOpen"
-      :title="
-        countAdjustSticker
-          ? `Figurinha ${countAdjustSticker.name}`
-          : 'Figurinha'
-      "
-      :ui="{ content: 'sm:max-w-md' }"
-    >
-      <template #body>
-        <p v-if="countAdjustSticker" class="text-sm text-muted">
-          {{ countAdjustSticker.code }} · na coleção:
-          <span class="font-medium text-neutral-900 dark:text-neutral-100">{{
-            getCount(countAdjustSticker.code)
-          }}</span>
-        </p>
-      </template>
-      <template #footer>
-        <div class="flex w-full flex-wrap items-center gap-2">
-          <UButton
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-minus"
-            label="Remover uma"
-            class="min-w-0 flex-1 sm:flex-initial"
-            :disabled="!countAdjustSticker || getCount(countAdjustSticker.code) < 1"
-            @click="countAdjustDecrement"
-          />
-          <UButton
-            color="primary"
-            icon="i-lucide-plus"
-            label="Adicionar uma"
-            class="min-w-0 flex-1 sm:flex-initial"
-            :disabled="!countAdjustSticker"
-            @click="countAdjustIncrement"
-          />
         </div>
       </template>
     </UModal>
@@ -470,6 +522,31 @@ function countAdjustIncrement() {
             color="error"
             label="Limpar tudo"
             @click="confirmClearCollection"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="clearGroupModalOpen"
+      :title="
+        clearGroupTarget ? `Limpar ${clearGroupTarget.name}?` : 'Limpar equipe?'
+      "
+      description="Todas as figurinhas desta equipe serão removidas da coleção. Esta ação não pode ser desfeita."
+      :ui="{ content: 'sm:max-w-md' }"
+    >
+      <template #footer>
+        <div class="flex w-full flex-wrap justify-end gap-2">
+          <UButton
+            color="neutral"
+            variant="outline"
+            label="Cancelar"
+            @click="clearGroupModalOpen = false"
+          />
+          <UButton
+            color="error"
+            label="Limpar equipe"
+            @click="confirmClearGroup"
           />
         </div>
       </template>

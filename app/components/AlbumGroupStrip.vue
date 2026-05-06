@@ -1,5 +1,16 @@
 <script setup lang="ts">
+import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
+
 const { groups } = useAlbum();
+const { getCount } = useCollection();
+
+function teamProgressLabel(group: Group) {
+  const total = group.stickers.length;
+  const owned = group.stickers.filter((s) => getCount(s.code) >= 1).length;
+  if (total <= 0) return "0/0 · 0%";
+  const pct = Math.round((owned / total) * 100);
+  return `${owned}/${total} · ${pct}%`;
+}
 
 defineEmits<{
   navigate: [groupId: string];
@@ -23,20 +34,18 @@ defineEmits<{
         @click="$emit('navigate', item.id)"
       >
         <div
-          class="rounded-full size-full aspect-square bg-cover bg-center"
-          :style="{
-            width: `${item.image.width * 0.2666667}px`,
-            height: `${item.image.height * 0.2666667}px`,
-            backgroundImage: `url(${item.image.sprite})`,
-            backgroundSize: `320px 160px`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: `${-item.image.x * 0.2666667}px ${-item.image.y * 0.2666667}px`,
-          }"
+          class="rounded-full shrink-0 aspect-square"
+          :style="groupSpriteStyle(item)"
         />
         <span
           class="max-w-full text-center text-[11px] font-secondary leading-tight truncate pointer-events-none max-lg:text-xs lg:text-xs"
         >
           {{ item.slug }}
+        </span>
+        <span
+          class="max-w-full text-center text-[10px] tabular-nums leading-tight text-muted pointer-events-none lg:hidden"
+        >
+          {{ teamProgressLabel(item) }}
         </span>
       </div>
     </template>
