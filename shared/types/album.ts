@@ -42,6 +42,9 @@ export type LocalAppConfig = {
   filter: FilterMode;
   groupSort: GroupSortMode;
   stickerEditLocked?: boolean;
-  /** When true, sticker cells are hidden on the home page (groups header remains). */
-  hideHomeStickerGrid?: boolean;
+  /**
+   * True: simple layout (group rows only, no sticker grid on home).
+   * False: wrapped/full layout with sticker grid on home (default).
+   */
+  simpleHomeVisualization?: boolean;
 };

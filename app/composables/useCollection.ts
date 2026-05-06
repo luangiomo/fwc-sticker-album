@@ -12,10 +12,13 @@ const defaultUiConfig = (): LocalAppConfig => ({
   filter: "all",
   groupSort: "default",
   stickerEditLocked: false,
-  hideHomeStickerGrid: false,
+  simpleHomeVisualization: false,
 });
 
-function normalizeUiConfig(raw: LocalAppConfig | null | undefined): LocalAppConfig {
+/** Legacy cookie key (same semantics as simpleHomeVisualization). */
+type UiConfigRaw = LocalAppConfig & { hideHomeStickerGrid?: boolean };
+
+function normalizeUiConfig(raw: UiConfigRaw | null | undefined): LocalAppConfig {
   const base = defaultUiConfig();
   const f = raw?.filter;
   const s = raw?.groupSort;
@@ -24,7 +27,9 @@ function normalizeUiConfig(raw: LocalAppConfig | null | undefined): LocalAppConf
   base.groupSort =
     s === "default" || s === "alphabetic" || s === "owned" ? s : base.groupSort;
   base.stickerEditLocked = raw?.stickerEditLocked === true;
-  base.hideHomeStickerGrid = raw?.hideHomeStickerGrid === true;
+  base.simpleHomeVisualization =
+    raw?.simpleHomeVisualization === true ||
+    raw?.hideHomeStickerGrid === true;
   return base;
 }
 
@@ -68,11 +73,13 @@ export const useCollection = () => {
     },
   });
 
-  const hideHomeStickerGrid = computed({
-    get: () => normalizeUiConfig(localConfig.value).hideHomeStickerGrid === true,
+  const simpleHomeVisualization = computed({
+    get: () =>
+      normalizeUiConfig(localConfig.value as UiConfigRaw)
+        .simpleHomeVisualization === true,
     set: (v: boolean) => {
-      const next = normalizeUiConfig(localConfig.value);
-      next.hideHomeStickerGrid = v;
+      const next = normalizeUiConfig(localConfig.value as UiConfigRaw);
+      next.simpleHomeVisualization = v;
       localConfig.value = next;
     },
   });
@@ -161,7 +168,7 @@ export const useCollection = () => {
   });
 
   const progress = computed(() =>
-    Math.round((stats.value.owned / allStickers.value.length) * 100),
+    Math.round((stats.value.owned / allStickers.value.length) * 100)
   );
 
   function filterStickers(stickers: Sticker[]): Sticker[] {
@@ -180,7 +187,7 @@ export const useCollection = () => {
     filter,
     groupSort,
     stickerEditLocked,
-    hideHomeStickerGrid,
+    simpleHomeVisualization,
     getCount,
     increment,
     decrement,

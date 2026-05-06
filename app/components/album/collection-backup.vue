@@ -34,7 +34,7 @@ const {
   replaceCollection,
   stats,
   stickerEditLocked,
-  hideHomeStickerGrid,
+  simpleHomeVisualization,
 } = useCollection();
 const { groups } = useAlbum();
 
@@ -178,9 +178,9 @@ function onLockMenuSelect(e: Event) {
   stickerEditLocked.value = !stickerEditLocked.value;
 }
 
-function onHomeGridMenuSelect(e: Event) {
+function onSimpleHomeVisualizationMenuSelect(e: Event) {
   e.preventDefault();
-  hideHomeStickerGrid.value = !hideHomeStickerGrid.value;
+  simpleHomeVisualization.value = !simpleHomeVisualization.value;
 }
 
 const dropdownItems = computed(() => {
@@ -198,11 +198,13 @@ const dropdownItems = computed(() => {
 
   const homeGridToggle = [
     {
-      label: "Visualização simplificada",
-      icon: "i-lucide-chevrons-down-up",
-      slot: "homeGridSwitch" as const,
-      checked: !hideHomeStickerGrid.value,
-      onSelect: onHomeGridMenuSelect,
+      label: "Visualização simples",
+      icon: simpleHomeVisualization.value
+        ? "i-lucide-layout-list"
+        : "i-lucide-layout-grid",
+      slot: "simpleVizSwitch" as const,
+      checked: simpleHomeVisualization.value,
+      onSelect: onSimpleHomeVisualizationMenuSelect,
     },
   ];
 
@@ -279,11 +281,11 @@ const dropdownItems = computed(() => {
           @click.stop.prevent="onLockMenuSelect($event)"
         />
       </template>
-      <template #homeGridSwitch-trailing="{ item }">
+      <template #simpleVizSwitch-trailing="{ item }">
         <USwitch
           :model-value="item.checked"
           tabindex="-1"
-          @click.stop.prevent="onHomeGridMenuSelect($event)"
+          @click.stop.prevent="onSimpleHomeVisualizationMenuSelect($event)"
         />
       </template>
     </UDropdownMenu>

@@ -20,8 +20,8 @@ const {
   stats,
 } = collection;
 
-/** When true, the per-group sticker grid is hidden on the home page (Opções). */
-const hideHomeStickerGrid = collection.hideHomeStickerGrid;
+/** When true, only group headers are shown (simple view); false = full sticker grid on home. */
+const simpleHomeVisualization = collection.simpleHomeVisualization;
 
 /** Explicit banner + template binding so lock state stays reactive (avoid destructuring the computed alone). */
 const showLockedBanner = computed({
@@ -394,7 +394,7 @@ const mobileClearMenuGroups = computed(() => [
           </button>
         </div>
         <div
-          v-if="hideHomeStickerGrid"
+          v-if="!simpleHomeVisualization"
           class="grid w-full min-w-0 grid-cols-5 gap-1.5 lg:grid-cols-20 lg:gap-1 lg:flex-1"
         >
           <div
