@@ -41,4 +41,5 @@ export type GroupSortMode = "default" | "alphabetic" | "owned";
 export type LocalAppConfig = {
   filter: FilterMode;
   groupSort: GroupSortMode;
+  stickerEditLocked?: boolean;
 };

@@ -11,6 +11,7 @@ const UI_COOKIE_NAME = "fwc-ui";
 const defaultUiConfig = (): LocalAppConfig => ({
   filter: "all",
   groupSort: "default",
+  stickerEditLocked: false,
 });
 
 function normalizeUiConfig(raw: LocalAppConfig | null | undefined): LocalAppConfig {
@@ -21,6 +22,7 @@ function normalizeUiConfig(raw: LocalAppConfig | null | undefined): LocalAppConf
     f === "all" || f === "missing" || f === "duplicates" ? f : base.filter;
   base.groupSort =
     s === "default" || s === "alphabetic" || s === "owned" ? s : base.groupSort;
+  base.stickerEditLocked = raw?.stickerEditLocked === true;
   return base;
 }
 
@@ -55,11 +57,21 @@ export const useCollection = () => {
     },
   });
 
+  const stickerEditLocked = computed({
+    get: () => normalizeUiConfig(localConfig.value).stickerEditLocked === true,
+    set: (v: boolean) => {
+      const next = normalizeUiConfig(localConfig.value);
+      next.stickerEditLocked = v;
+      localConfig.value = next;
+    },
+  });
+
   function getCount(stickerId: string): number {
     return collection.value?.[stickerId] ?? 0;
   }
 
   function increment(stickerId: string) {
+    if (stickerEditLocked.value) return;
     const cur = collection.value ?? {};
     collection.value = {
       ...cur,
@@ -68,6 +80,7 @@ export const useCollection = () => {
   }
 
   function decrement(stickerId: string) {
+    if (stickerEditLocked.value) return;
     const current = getCount(stickerId);
     if (current <= 0) return;
     const next = current - 1;
@@ -84,6 +97,7 @@ export const useCollection = () => {
   }
 
   function resetCount(stickerId: string) {
+    if (stickerEditLocked.value) return;
     const cur = collection.value ?? {};
     if (!(stickerId in cur)) return;
     const { [stickerId]: _, ...rest } = cur;
@@ -91,10 +105,12 @@ export const useCollection = () => {
   }
 
   function clearCollection() {
+    if (stickerEditLocked.value) return;
     collection.value = {};
   }
 
   function clearGroup(group: Group) {
+    if (stickerEditLocked.value) return;
     const cur = { ...(collection.value ?? {}) };
     for (const s of group.stickers) {
       delete cur[s.code];
@@ -104,6 +120,7 @@ export const useCollection = () => {
 
   /** Replaces the whole cookie-backed collection (e.g. import on another device). */
   function replaceCollection(next: Collection) {
+    if (stickerEditLocked.value) return;
     const cleaned: Collection = {};
     for (const [code, count] of Object.entries(next)) {
       if (typeof count === "number" && Number.isInteger(count) && count > 0) {
@@ -151,6 +168,7 @@ export const useCollection = () => {
     collection,
     filter,
     groupSort,
+    stickerEditLocked,
     getCount,
     increment,
     decrement,

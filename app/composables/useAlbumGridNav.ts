@@ -26,7 +26,7 @@ const STICKER_FIND_SELECTOR = "[data-sticker-find]";
 const STICKER_FIND_DEBOUNCE_MS = 800;
 
 export const useAlbumGridNav = (
-  gridGroups: Ref<GridGroup[]> | ComputedRef<GridGroup[]>,
+  gridGroups: Ref<GridGroup[]> | ComputedRef<GridGroup[]>
 ) => {
   const isDesktopNav = useMediaQuery("(min-width: 1024px)");
 
@@ -92,7 +92,7 @@ export const useAlbumGridNav = (
     if (!isDesktopNav.value) return;
     nextTick(() => {
       const el = document.querySelector(
-        `[data-grid-pos="${gIdx}-${sIdx}"]`,
+        `[data-grid-pos="${gIdx}-${sIdx}"]`
       ) as HTMLElement | null;
       el?.focus({ preventScroll: true });
       if (el) ensureVisibleBelowSticky(el, "smooth");
@@ -315,7 +315,7 @@ export const useAlbumGridNav = (
   }
 
   const searchModeActive = computed(
-    () => searchOpen.value || stickerFindOpen.value,
+    () => searchOpen.value || stickerFindOpen.value
   );
 
   function exitSearchMode() {
@@ -471,7 +471,7 @@ export const useAlbumGridNav = (
     } else {
       focusStickerIndex.value = clampCol(
         focusGroupIndex.value,
-        focusStickerIndex.value,
+        focusStickerIndex.value
       );
     }
   });

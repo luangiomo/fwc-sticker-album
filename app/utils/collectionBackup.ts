@@ -7,7 +7,10 @@ export function buildCollectionExportBody(collection: Collection): string {
   const rows = Object.entries(collection)
     .filter(([, count]) => typeof count === "number" && count > 0)
     .sort(([a], [b]) => a.localeCompare(b, "pt", { sensitivity: "base" }));
-  const lines = ["code,count", ...rows.map(([code, count]) => `${code},${count}`)];
+  const lines = [
+    "code,count",
+    ...rows.map(([code, count]) => `${code},${count}`),
+  ];
   return lines.join("\n");
 }
 
@@ -35,7 +38,7 @@ export type ParseCollectionResult =
  */
 export function parseCollectionBackup(
   text: string,
-  validCodes: Set<string>,
+  validCodes: Set<string>
 ): ParseCollectionResult {
   const warnings: string[] = [];
   const collection: Collection = {};
@@ -47,7 +50,9 @@ export function parseCollectionBackup(
 
     const comma = raw.indexOf(",");
     if (comma <= 0) {
-      warnings.push(`Linha ${i + 1}: formato inválido (esperado código,quantidade).`);
+      warnings.push(
+        `Linha ${i + 1}: formato inválido (esperado código,quantidade).`
+      );
       continue;
     }
 
@@ -95,13 +100,20 @@ export function parseCollectionBackup(
     ) {
       return { ok: true, collection: {}, warnings };
     }
-    return { ok: false, error: "Nenhuma figurinha válida encontrada no arquivo." };
+    return {
+      ok: false,
+      error: "Nenhuma figurinha válida encontrada no arquivo.",
+    };
   }
 
   return { ok: true, collection, warnings };
 }
 
-export function downloadTextFile(filename: string, content: string, mime: string) {
+export function downloadTextFile(
+  filename: string,
+  content: string,
+  mime: string
+) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -151,7 +163,7 @@ export function openCollectionPrintWindow(rows: PrintRow[], title: string) {
   const bodyRows = rows
     .map(
       (r) =>
-        `<tr><td>${escapeHtml(r.code)}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.groupName)}</td><td class="num">${r.count}</td></tr>`,
+        `<tr><td>${escapeHtml(r.code)}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.groupName)}</td><td class="num">${r.count}</td></tr>`
     )
     .join("");
 

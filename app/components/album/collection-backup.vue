@@ -20,6 +20,9 @@ const props = defineProps<{
   /** Itens extra após export/import (ex.: limpar coleção no mobile). */
   appendItems?: ExtraMenuGroups;
 }>();
+
+const { collection, getCount, replaceCollection, stats, stickerEditLocked } =
+  useCollection();
 const { groups } = useAlbum();
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
@@ -156,8 +159,26 @@ const importModalTitle = computed(() => {
   return "Importação";
 });
 
+function onLockMenuSelect(e: Event) {
+  e.preventDefault();
+  stickerEditLocked.value = !stickerEditLocked.value;
+}
+
 const dropdownItems = computed(() => {
+  const locked = stickerEditLocked.value;
+
+  const lockToggle = [
+    {
+      label: "Travar edição",
+      icon: locked ? "i-lucide-lock" : "i-lucide-lock-open",
+      slot: "lockSwitch" as const,
+      checked: locked,
+      onSelect: onLockMenuSelect,
+    },
+  ];
+
   const core = [
+    lockToggle,
     [
       {
         label: "Exportar CSV",
@@ -174,6 +195,7 @@ const dropdownItems = computed(() => {
       {
         label: "Importar arquivo…",
         icon: "i-lucide-upload",
+        disabled: locked,
         onSelect: () => triggerImportPick(),
       },
       {
@@ -182,10 +204,10 @@ const dropdownItems = computed(() => {
         onSelect: printList,
       },
     ],
-  ] as ExtraMenuGroups;
+  ];
   const extra = props.appendItems;
   if (extra?.length) {
-    return [...core, ...extra] as ExtraMenuGroups;
+    return [...core, ...extra];
   }
   return core;
 });
@@ -207,21 +229,29 @@ const dropdownItems = computed(() => {
         variant="outline"
         size="sm"
         class="shrink-0"
-        aria-label="Menu: cópia, exportar e outras ações"
+        aria-label="Opções"
       >
         <UIcon
           name="i-lucide-menu"
           class="size-4.5 lg:hidden"
         />
         <span class="hidden items-center gap-1.5 lg:inline-flex">
-          <UIcon name="i-lucide-save" class="size-4 shrink-0" />
-          <span>Cópia</span>
+          <UIcon name="i-lucide-settings-2" class="size-4 shrink-0" />
+          <span>Opções</span>
           <UIcon
             name="i-lucide-chevron-down"
             class="size-4 shrink-0 opacity-70"
           />
         </span>
       </UButton>
+
+      <template #lockSwitch-trailing="{ item }">
+        <USwitch
+          :model-value="item.checked"
+          tabindex="-1"
+          @click.stop.prevent="onLockMenuSelect($event)"
+        />
+      </template>
     </UDropdownMenu>
 
     <UModal

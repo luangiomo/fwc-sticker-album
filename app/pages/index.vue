@@ -7,6 +7,7 @@ import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
 const isLg = useMediaQuery("(min-width: 1024px)");
 
 const { groups } = useAlbum();
+const collection = useCollection();
 const {
   getCount,
   increment,
@@ -17,7 +18,15 @@ const {
   clearCollection,
   clearGroup,
   stats,
-} = useCollection();
+} = collection;
+
+/** Explicit banner + template binding so lock state stays reactive (avoid destructuring the computed alone). */
+const showLockedBanner = computed({
+  get: () => collection.stickerEditLocked.value,
+  set: (v: boolean) => {
+    collection.stickerEditLocked.value = v;
+  },
+});
 
 const clearCollectionModalOpen = ref(false);
 const clearGroupModalOpen = ref(false);
@@ -162,7 +171,7 @@ function onStickerContextMenu(
   code: string,
   gIdx: number,
   sIdx: number,
-  e: MouseEvent,
+  e: MouseEvent
 ) {
   if (isLg.value) {
     decrement(code);
@@ -200,8 +209,8 @@ const mobileClearMenuGroups = computed(() => [
       label: "Limpar coleção",
       icon: "i-lucide-trash-2",
       color: "error" as const,
+      disabled: collection.stickerEditLocked.value || stats.value.owned === 0,
       onSelect: () => {
-        if (stats.value.owned === 0) return;
         clearCollectionModalOpen.value = true;
       },
     },
@@ -210,12 +219,29 @@ const mobileClearMenuGroups = computed(() => [
 </script>
 
 <template>
-  <UContainer class="px-3 py-4 md:px-5 md:py-5 lg:px-4 lg:py-8">
+  <UContainer class="p-0">
     <div
       data-sticky-page-header
-      class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 backdrop-blur-sm py-2 dark:border-neutral-800 dark:bg-neutral-950/95"
+      class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 px-3 py-2 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-950/95 md:px-5 md:pt-5 lg:px-4 lg:pt-8"
     >
       <div class="flex flex-col lg:gap-1">
+        <div
+          v-if="showLockedBanner"
+          class="my-2 flex items-center gap-2 rounded-md border border-blue-200/90 bg-blue-50 px-3 py-1.5 text-xs text-blue-950 dark:border-blue-800/80 dark:bg-blue-950/45 dark:text-blue-100"
+        >
+          <UIcon
+            name="i-lucide-lock"
+            class="size-3.5 shrink-0 text-blue-600 dark:text-blue-300"
+          />
+          <span class="min-w-0 flex-1">Álbum travado — edição desativada.</span>
+          <UButton
+            color="neutral"
+            variant="link"
+            size="xs"
+            label="Desbloquear"
+            @click="showLockedBanner = false"
+          />
+        </div>
         <div
           class="flex flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
         >
@@ -291,14 +317,13 @@ const mobileClearMenuGroups = computed(() => [
               icon="i-lucide-trash-2"
               label="Limpar coleção"
               class="shrink-0"
-              :disabled="stats.owned === 0"
+              :disabled="showLockedBanner || stats.owned === 0"
               @click="clearCollectionModalOpen = true"
             />
           </div>
         </div>
 
         <AlbumProgress />
-
         <p
           v-if="stickerFindOpen && isLg"
           class="hidden text-[11px] leading-snug text-muted lg:block lg:text-right"
@@ -314,7 +339,10 @@ const mobileClearMenuGroups = computed(() => [
       </div>
     </div>
 
-    <div class="flex flex-col" role="grid">
+    <div
+      class="flex flex-col px-3 pb-4 md:px-5 md:pb-5 lg:px-4 lg:pb-8"
+      role="grid"
+    >
       <div
         v-for="(item, gIdx) in renderedGroups"
         :key="item.id"
@@ -337,22 +365,29 @@ const mobileClearMenuGroups = computed(() => [
           />
           <button
             type="button"
-            class="flex min-h-0 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm text-left outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
+            class="flex min-h-0 min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 rounded-sm text-left outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
             :aria-label="`Abrir figurinhas de ${item.name}`"
             @click="openGroupDetail(item)"
           >
-            <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
-              {{ item.slug }}
-            </h3>
-            <span class="text-xs text-muted">·</span>
-            <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
-              {{ item.name }}
-            </h3>
-            <span
-              class="shrink-0 tabular-nums text-[11px] leading-tight text-muted"
-            >
-              {{ formatTeamProgress(item.ownedInGroup, item.totalInGroup) }}
-            </span>
+            <div class="flex flex-1 items-center gap-2">
+              <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+                {{ item.slug }}
+              </h3>
+              <span class="text-xs text-muted">·</span>
+              <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+                {{ item.name }}
+              </h3>
+              <span class="text-xs text-muted">·</span>
+              <span
+                class="shrink-0 tabular-nums text-[11px] leading-tight text-muted"
+              >
+                {{ formatTeamProgress(item.ownedInGroup, item.totalInGroup) }}
+              </span>
+            </div>
+            <UIcon
+              name="i-lucide-chevron-right"
+              class="size-3.5 shrink-0 text-muted"
+            />
           </button>
         </div>
         <div
@@ -417,16 +452,17 @@ const mobileClearMenuGroups = computed(() => [
       }"
     >
       <template #header="{ close }">
-        <div class="flex w-full items-start gap-3">
+        <div class="flex w-full items-center gap-3">
           <div
             v-if="groupDetailGroup"
             class="rounded-md shrink-0 border border-neutral-200 dark:border-neutral-700"
             :style="groupSpriteStyle(groupDetailGroup)"
           />
           <div class="min-w-0 flex-1 pt-0.5">
-            <h2 class="truncate text-lg leading-tight font-semibold">
-              {{ groupDetailGroup?.name }}
-            </h2>
+            <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+              {{ groupDetailGroup?.name }} ({{ groupDetailGroup?.slug }})
+            </h3>
+
             <p class="mt-0.5 text-xs text-muted tabular-nums">
               {{ groupOwnedProgressLabel(groupDetailGroup) }}
             </p>
@@ -439,6 +475,7 @@ const mobileClearMenuGroups = computed(() => [
               square
               class="shrink-0"
               :disabled="
+                showLockedBanner ||
                 !groupDetailGroup ||
                 !groupDetailGroup.stickers.some((s) => getCount(s.code) >= 1)
               "
@@ -488,7 +525,9 @@ const mobileClearMenuGroups = computed(() => [
                 })
               "
               @pointercancel="mobileGroupDetailGestures.onPointerCancel()"
-              @contextmenu.prevent="onGroupDetailStickerContextMenu(sticker, $event)"
+              @contextmenu.prevent="
+                onGroupDetailStickerContextMenu(sticker, $event)
+              "
             >
               <span class="px-0.5">{{ sticker.name }}</span>
               <span
