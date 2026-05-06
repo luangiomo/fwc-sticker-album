@@ -13,7 +13,14 @@ type ExtraMenuGroups = {
   label: string;
   icon?: string;
   onSelect?: () => void;
-  color?: "error" | "neutral" | "primary" | "secondary" | "success" | "info" | "warning";
+  color?:
+    | "error"
+    | "neutral"
+    | "primary"
+    | "secondary"
+    | "success"
+    | "info"
+    | "warning";
 }[][];
 
 const props = defineProps<{
@@ -21,17 +28,24 @@ const props = defineProps<{
   appendItems?: ExtraMenuGroups;
 }>();
 
-const { collection, getCount, replaceCollection, stats, stickerEditLocked } =
-  useCollection();
+const {
+  collection,
+  getCount,
+  replaceCollection,
+  stats,
+  stickerEditLocked,
+  hideHomeStickerGrid,
+} = useCollection();
 const { groups } = useAlbum();
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
 
 const importOpen = ref(false);
 const importError = ref<string | null>(null);
-const importPending = ref<{ collection: Collection; warnings: string[] } | null>(
-  null,
-);
+const importPending = ref<{
+  collection: Collection;
+  warnings: string[];
+} | null>(null);
 
 const validCodes = computed(() => {
   const s = new Set<string>();
@@ -51,7 +65,7 @@ function exportCsv() {
   downloadTextFile(
     filenameFor("csv"),
     serializeCollectionCsv(raw),
-    "text/csv;charset=utf-8",
+    "text/csv;charset=utf-8"
   );
 }
 
@@ -60,7 +74,7 @@ function exportTxt() {
   downloadTextFile(
     filenameFor("txt"),
     serializeCollectionTxt(raw),
-    "text/plain;charset=utf-8",
+    "text/plain;charset=utf-8"
   );
 }
 
@@ -86,7 +100,7 @@ function printList() {
     }
   }
   rows.sort((a, b) =>
-    a.code.localeCompare(b.code, "pt", { sensitivity: "base" }),
+    a.code.localeCompare(b.code, "pt", { sensitivity: "base" })
   );
 
   if (!openCollectionPrintWindow(rows, "Coleção de figurinhas")) {
@@ -164,6 +178,11 @@ function onLockMenuSelect(e: Event) {
   stickerEditLocked.value = !stickerEditLocked.value;
 }
 
+function onHomeGridMenuSelect(e: Event) {
+  e.preventDefault();
+  hideHomeStickerGrid.value = !hideHomeStickerGrid.value;
+}
+
 const dropdownItems = computed(() => {
   const locked = stickerEditLocked.value;
 
@@ -177,8 +196,19 @@ const dropdownItems = computed(() => {
     },
   ];
 
+  const homeGridToggle = [
+    {
+      label: "Visualização simplificada",
+      icon: "i-lucide-chevrons-down-up",
+      slot: "homeGridSwitch" as const,
+      checked: !hideHomeStickerGrid.value,
+      onSelect: onHomeGridMenuSelect,
+    },
+  ];
+
   const core = [
     lockToggle,
+    homeGridToggle,
     [
       {
         label: "Exportar CSV",
@@ -231,10 +261,7 @@ const dropdownItems = computed(() => {
         class="shrink-0"
         aria-label="Opções"
       >
-        <UIcon
-          name="i-lucide-menu"
-          class="size-4.5 lg:hidden"
-        />
+        <UIcon name="i-lucide-menu" class="size-4.5 lg:hidden" />
         <span class="hidden items-center gap-1.5 lg:inline-flex">
           <UIcon name="i-lucide-settings-2" class="size-4 shrink-0" />
           <span>Opções</span>
@@ -250,6 +277,13 @@ const dropdownItems = computed(() => {
           :model-value="item.checked"
           tabindex="-1"
           @click.stop.prevent="onLockMenuSelect($event)"
+        />
+      </template>
+      <template #homeGridSwitch-trailing="{ item }">
+        <USwitch
+          :model-value="item.checked"
+          tabindex="-1"
+          @click.stop.prevent="onHomeGridMenuSelect($event)"
         />
       </template>
     </UDropdownMenu>
@@ -286,14 +320,21 @@ const dropdownItems = computed(() => {
         <div v-if="importError" class="flex w-full justify-end">
           <UButton label="Fechar" color="neutral" @click="cancelImportDialog" />
         </div>
-        <div v-else-if="importPending" class="flex w-full flex-wrap justify-end gap-2">
+        <div
+          v-else-if="importPending"
+          class="flex w-full flex-wrap justify-end gap-2"
+        >
           <UButton
             color="neutral"
             variant="outline"
             label="Cancelar"
             @click="cancelImportDialog"
           />
-          <UButton color="primary" label="Substituir coleção" @click="confirmImport" />
+          <UButton
+            color="primary"
+            label="Substituir coleção"
+            @click="confirmImport"
+          />
         </div>
       </template>
     </UModal>

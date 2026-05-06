@@ -12,6 +12,7 @@ const defaultUiConfig = (): LocalAppConfig => ({
   filter: "all",
   groupSort: "default",
   stickerEditLocked: false,
+  hideHomeStickerGrid: false,
 });
 
 function normalizeUiConfig(raw: LocalAppConfig | null | undefined): LocalAppConfig {
@@ -23,6 +24,7 @@ function normalizeUiConfig(raw: LocalAppConfig | null | undefined): LocalAppConf
   base.groupSort =
     s === "default" || s === "alphabetic" || s === "owned" ? s : base.groupSort;
   base.stickerEditLocked = raw?.stickerEditLocked === true;
+  base.hideHomeStickerGrid = raw?.hideHomeStickerGrid === true;
   return base;
 }
 
@@ -62,6 +64,15 @@ export const useCollection = () => {
     set: (v: boolean) => {
       const next = normalizeUiConfig(localConfig.value);
       next.stickerEditLocked = v;
+      localConfig.value = next;
+    },
+  });
+
+  const hideHomeStickerGrid = computed({
+    get: () => normalizeUiConfig(localConfig.value).hideHomeStickerGrid === true,
+    set: (v: boolean) => {
+      const next = normalizeUiConfig(localConfig.value);
+      next.hideHomeStickerGrid = v;
       localConfig.value = next;
     },
   });
@@ -169,6 +180,7 @@ export const useCollection = () => {
     filter,
     groupSort,
     stickerEditLocked,
+    hideHomeStickerGrid,
     getCount,
     increment,
     decrement,
