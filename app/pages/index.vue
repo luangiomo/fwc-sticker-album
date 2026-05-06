@@ -227,15 +227,15 @@ const mobileClearMenuGroups = computed(() => [
       <div class="flex flex-col lg:gap-1">
         <div
           v-if="showLockedBanner"
-          class="my-2 flex items-center gap-2 rounded-md border border-blue-200/90 bg-blue-50 px-3 py-1.5 text-xs text-blue-950 dark:border-blue-800/80 dark:bg-blue-950/45 dark:text-blue-100"
+          class="my-2 flex items-center gap-2 rounded-md border border-amber-200/90 bg-amber-50 px-3 py-1.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300"
         >
           <UIcon
             name="i-lucide-lock"
-            class="size-3.5 shrink-0 text-blue-600 dark:text-blue-300"
+            class="size-3.5 shrink-0 text-amber-700 dark:text-amber-400"
           />
           <span class="min-w-0 flex-1">Álbum travado — edição desativada.</span>
           <UButton
-            color="neutral"
+            color="warning"
             variant="link"
             size="xs"
             label="Desbloquear"
