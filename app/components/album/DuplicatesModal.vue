@@ -1,72 +1,146 @@
 <script setup lang="ts">
 import type { Group, Sticker } from "#shared/types/album";
+import { duplicateExtra } from "~/utils/duplicateDisplay";
 import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
 
 const open = defineModel<boolean>("open", { default: false });
 
+type DupGroupSortMode = "default" | "alphabetic" | "mostDuplicates";
+
+const dupGroupSort = ref<DupGroupSortMode>("default");
+
+const sortOptions: { label: string; value: DupGroupSortMode }[] = [
+  { label: "Padrão", value: "default" },
+  { label: "A-Z", value: "alphabetic" },
+  { label: "Mais repetidas", value: "mostDuplicates" },
+];
+
 const { groups } = useAlbum();
 const { getCount } = useCollection();
 
+function extrasInGroup(dupStickers: Sticker[]) {
+  return dupStickers.reduce(
+    (acc, s) => acc + duplicateExtra(getCount(s.code)),
+    0
+  );
+}
+
+function sortDupStickers(stickers: Sticker[]) {
+  return [...stickers].sort((a, b) =>
+    a.name.localeCompare(b.name, "pt", { sensitivity: "base" })
+  );
+}
+
 const duplicateRows = computed(() => {
-  const out: { group: Group; dupStickers: Sticker[] }[] = [];
+  const rows: { group: Group; dupStickers: Sticker[] }[] = [];
   for (const g of groups) {
-    const dupStickers = g.stickers.filter((s) => getCount(s.code) > 1);
-    if (dupStickers.length) out.push({ group: g, dupStickers });
+    const rawDup = g.stickers.filter((s) => getCount(s.code) > 1);
+    if (rawDup.length) {
+      rows.push({ group: g, dupStickers: sortDupStickers(rawDup) });
+    }
   }
-  return out;
+
+  const mode = dupGroupSort.value;
+  if (mode === "default") return rows;
+
+  const copy = [...rows];
+  if (mode === "alphabetic") {
+    copy.sort((a, b) =>
+      a.group.slug.localeCompare(b.group.slug, "pt", { sensitivity: "base" })
+    );
+  } else {
+    copy.sort((a, b) => {
+      const wa = extrasInGroup(a.dupStickers);
+      const wb = extrasInGroup(b.dupStickers);
+      if (wb !== wa) return wb - wa;
+      return a.group.slug.localeCompare(b.group.slug, "pt", {
+        sensitivity: "base",
+      });
+    });
+  }
+  return copy;
 });
+
+/** Uma célula por exemplar físico na coleção (ex.: 5 iguais → 5 itens). */
+function expandedDuplicateCells(dupStickers: Sticker[]) {
+  const cells: { key: string; sticker: Sticker }[] = [];
+  for (const s of dupStickers) {
+    const n = getCount(s.code);
+    for (let i = 0; i < n; i++) {
+      cells.push({ key: `${s.code}-${i}`, sticker: s });
+    }
+  }
+  return cells;
+}
+
+function totalDuplicateCopies(dupStickers: Sticker[]) {
+  return dupStickers.reduce((acc, s) => acc + getCount(s.code), 0);
+}
 </script>
 
 <template>
   <UModal
     v-model:open="open"
     title="Figurinhas repetidas"
-    description="Por equipa — só figurinhas com mais de uma cópia na coleção."
-    :ui="{ content: 'w-[calc(100vw-1.5rem)] max-w-lg max-h-[min(90vh,40rem)] flex flex-col' }"
+    :ui="{
+      content:
+        'w-[calc(100vw-1.5rem)] max-w-xl max-h-[min(90vh,44rem)] flex flex-col',
+    }"
   >
     <template #body>
-      <div
-        v-if="duplicateRows.length === 0"
-        class="text-sm text-muted"
-      >
+      <div class="mb-4 flex flex-wrap items-center gap-2">
+        <span class="text-[11px] text-muted">Ordenar equipas</span>
+        <UFieldGroup size="sm" class="min-w-0 flex-1">
+          <UButton
+            v-for="opt in sortOptions"
+            :key="opt.value"
+            color="neutral"
+            :variant="dupGroupSort === opt.value ? 'solid' : 'outline'"
+            :label="opt.label"
+            @click="dupGroupSort = opt.value"
+          />
+        </UFieldGroup>
+      </div>
+
+      <div v-if="duplicateRows.length === 0" class="text-sm text-muted">
         Nenhuma figurinha repetida.
       </div>
       <div
         v-else
-        class="max-h-[min(65vh,28rem)] space-y-5 overflow-y-auto pr-1 -mr-1"
+        class="max-h-[min(62vh,34rem)] space-y-6 overflow-y-auto overflow-x-hidden pr-1 -mr-1"
       >
-        <section
+        <div
           v-for="row in duplicateRows"
           :key="row.group.id"
-          class="border-b border-neutral-200 pb-4 last:border-0 last:pb-0 dark:border-neutral-800"
+          class="border-t border-neutral-200 pt-6 first:border-t-0 first:pt-0 dark:border-neutral-800"
         >
-          <div class="flex items-start gap-3">
+          <div class="flex w-full items-center gap-3">
             <div
-              class="shrink-0 rounded-md border border-neutral-200 bg-cover bg-center dark:border-neutral-700"
+              class="rounded-md shrink-0 border border-neutral-200 dark:border-neutral-700"
               :style="groupSpriteStyle(row.group)"
             />
-            <div class="min-w-0 flex-1">
-              <p class="text-[11px] font-medium text-muted">
-                {{ row.group.slug }}
-              </p>
-              <p class="truncate text-sm font-medium leading-snug">
-                {{ row.group.name }}
+            <div class="min-w-0 flex-1 pt-0.5">
+              <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+                {{ row.group.name }} ({{ row.group.slug }})
+              </h3>
+              <p class="mt-0.5 text-xs text-muted tabular-nums">
+                {{ totalDuplicateCopies(row.dupStickers) }} repetidas
               </p>
             </div>
           </div>
-          <ul
-            class="mt-3 flex flex-wrap gap-1.5"
-            aria-label="Figurinhas repetidas desta equipa"
+
+          <div
+            class="mt-4 grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8 max-lg:gap-1.5 lg:gap-1.5"
           >
-            <li
-              v-for="s in row.dupStickers"
-              :key="s.id"
-              class="rounded-md bg-neutral-100 px-2 py-1 text-xs tabular-nums text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+            <div
+              v-for="cell in expandedDuplicateCells(row.dupStickers)"
+              :key="cell.key"
+              class="relative flex min-h-11 cursor-default items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none lg:h-9 lg:min-h-0 lg:rounded-sm bg-blue-600 text-white dark:bg-blue-500 dark:text-blue-50"
             >
-              {{ s.name }}
-            </li>
-          </ul>
-        </section>
+              <span class="px-0.5">{{ cell.sticker.name }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </template>
   </UModal>
