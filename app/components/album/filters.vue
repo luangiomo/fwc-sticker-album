@@ -6,7 +6,7 @@ const { filter, groupSort } = useCollection();
 const filters: { label: string; value: FilterMode }[] = [
   { label: "Todas", value: "all" },
   { label: "Faltantes", value: "missing" },
-  // { label: "Repetidas", value: "duplicates" },
+  { label: "Repetidas", value: "duplicates" },
 ];
 
 type SortModeItem = {
