@@ -1,3 +1,4 @@
+import { useLocalStorage } from "@vueuse/core";
 import type {
   Collection,
   FilterMode,
@@ -5,7 +6,10 @@ import type {
   LocalAppConfig,
 } from "#shared/types/album";
 
-const COOKIE_NAME = "fwc-collection";
+/** Legacy cookie name — collection lived here until mobile browsers hit ~4KB cookie limits. */
+const LEGACY_COLLECTION_COOKIE = "fwc-collection";
+/** Versioned key so future migrations stay predictable. */
+const COLLECTION_STORAGE_KEY = "fwc-collection-v2";
 const UI_COOKIE_NAME = "fwc-ui";
 
 const defaultUiConfig = (): LocalAppConfig => ({
@@ -38,11 +42,30 @@ function normalizeUiConfig(raw: UiConfigRaw | null | undefined): LocalAppConfig 
 }
 
 export const useCollection = () => {
-  const collection = useCookie<Collection>(COOKIE_NAME, {
-    default: () => ({}),
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 365 * 5,
+  const collection = useLocalStorage<Collection>(COLLECTION_STORAGE_KEY, {}, {
+    mergeDefaults: true,
   });
+
+  const legacyCollectionCookie = useCookie<Collection | null>(
+    LEGACY_COLLECTION_COOKIE,
+    {
+      default: () => null,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365 * 5,
+    },
+  );
+
+  if (import.meta.client) {
+    const legacy = legacyCollectionCookie.value;
+    const legacyKeys =
+      legacy && typeof legacy === "object" ? Object.keys(legacy) : [];
+    if (Object.keys(collection.value).length === 0 && legacyKeys.length > 0) {
+      collection.value = { ...legacy! };
+    }
+    if (legacyKeys.length > 0) {
+      legacyCollectionCookie.value = null;
+    }
+  }
 
   const localConfig = useCookie<LocalAppConfig>(UI_COOKIE_NAME, {
     default: () => defaultUiConfig(),
@@ -140,7 +163,7 @@ export const useCollection = () => {
     collection.value = cur;
   }
 
-  /** Replaces the whole cookie-backed collection (e.g. import on another device). */
+  /** Replaces the whole persisted collection (e.g. import on another device). */
   function replaceCollection(next: Collection) {
     if (stickerEditLocked.value) return;
     const cleaned: Collection = {};
