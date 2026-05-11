@@ -2,13 +2,19 @@
 import type { DropdownMenuItem, TabsItem } from "@nuxt/ui";
 import type { GroupSortMode } from "#shared/types/album";
 
-const { filter, groupSort, stickerEditLocked } = useCollection();
+const { filter, groupSort, stickerEditLocked, stats } = useCollection();
 
-const filterTabItems: TabsItem[] = [
-  { label: "Todas", value: "all" },
-  { label: "Faltantes", value: "missing" },
-  { label: "Repetidas", value: "duplicates" },
-];
+const filterTabItems = computed<TabsItem[]>(() => {
+  const dupLabel =
+    stats.value.duplicates > 1
+      ? `Repetidas (${stats.value.duplicates})`
+      : "Repetidas";
+  return [
+    { label: "Todas", value: "all" },
+    { label: "Faltantes", value: "missing" },
+    { label: dupLabel, value: "duplicates" },
+  ];
+});
 
 function setSort(mode: GroupSortMode) {
   groupSort.value = mode;
