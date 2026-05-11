@@ -4,11 +4,13 @@ import {
   scrollIntoViewBelowSticky,
 } from "~/utils/scrollBelowSticky";
 
+type AlbumGridCell = { key: string; sticker: Sticker };
+
 type GridGroup = {
   id: string;
   name: string;
   slug: string;
-  stickers: Sticker[];
+  gridCells: AlbumGridCell[];
 };
 
 function stickerMatchScore(sticker: Sticker, q: string): number {
@@ -46,11 +48,13 @@ export const useAlbumGridNav = (
     }
   }
 
-  const { increment, resetCount } = useCollection();
+  const { increment, resetCount, decrement, filter } = useCollection();
 
   const focusedStickerId = computed(() => {
     const group = gridGroups.value[focusGroupIndex.value];
-    return group?.stickers[focusStickerIndex.value]?.code ?? null;
+    return (
+      group?.gridCells[focusStickerIndex.value]?.sticker.code ?? null
+    );
   });
 
   const findMatchSummary = computed(() => {
@@ -64,9 +68,9 @@ export const useAlbumGridNav = (
     let best: { gi: number; si: number } | null = null;
     const groups = gridGroups.value;
     for (let gi = 0; gi < groups.length; gi++) {
-      const stickers = groups[gi]?.stickers ?? [];
-      for (let si = 0; si < stickers.length; si++) {
-        const score = stickerMatchScore(stickers[si]!, q);
+      const cells = groups[gi]?.gridCells ?? [];
+      for (let si = 0; si < cells.length; si++) {
+        const score = stickerMatchScore(cells[si]!.sticker, q);
         if (score > bestScore) {
           bestScore = score;
           best = { gi, si };
@@ -75,13 +79,13 @@ export const useAlbumGridNav = (
     }
     if (!best || bestScore < 0) return "Nenhuma figurinha encontrada";
     const g = groups[best.gi];
-    const s = g?.stickers[best.si];
+    const s = g?.gridCells[best.si]?.sticker;
     if (!g || !s) return "";
     return `${g.name} · ${s.code}`;
   });
 
   function clampCol(groupIdx: number, col: number): number {
-    const len = gridGroups.value[groupIdx]?.stickers.length ?? 0;
+    const len = gridGroups.value[groupIdx]?.gridCells.length ?? 0;
     if (len === 0) return -1;
     return Math.min(col, len - 1);
   }
@@ -110,7 +114,7 @@ export const useAlbumGridNav = (
   function findNextNonEmptyGroup(from: number, direction: 1 | -1): number {
     let idx = from + direction;
     while (idx >= 0 && idx < gridGroups.value.length) {
-      if (gridGroups.value[idx]!.stickers.length > 0) return idx;
+      if (gridGroups.value[idx]!.gridCells.length > 0) return idx;
       idx += direction;
     }
     return -1;
@@ -124,9 +128,9 @@ export const useAlbumGridNav = (
     let best: { gi: number; si: number } | null = null;
     const groups = gridGroups.value;
     for (let gi = 0; gi < groups.length; gi++) {
-      const stickers = groups[gi]?.stickers ?? [];
-      for (let si = 0; si < stickers.length; si++) {
-        const score = stickerMatchScore(stickers[si]!, q);
+      const cells = groups[gi]?.gridCells ?? [];
+      for (let si = 0; si < cells.length; si++) {
+        const score = stickerMatchScore(cells[si]!.sticker, q);
         if (score > bestScore) {
           bestScore = score;
           best = { gi, si };
@@ -206,7 +210,7 @@ export const useAlbumGridNav = (
     }
 
     const row = groups[focusGroupIndex.value];
-    if (row && focusStickerIndex.value < row.stickers.length - 1) {
+    if (row && focusStickerIndex.value < row.gridCells.length - 1) {
       setFocus(focusGroupIndex.value, focusStickerIndex.value + 1);
     }
   }
@@ -252,7 +256,7 @@ export const useAlbumGridNav = (
     }
 
     const row = groups[focusGroupIndex.value];
-    if (row && focusStickerIndex.value < row.stickers.length - 1) {
+    if (row && focusStickerIndex.value < row.gridCells.length - 1) {
       setFocus(focusGroupIndex.value, focusStickerIndex.value + 1);
     } else {
       const next = findNextNonEmptyGroup(focusGroupIndex.value, 1);
@@ -268,7 +272,7 @@ export const useAlbumGridNav = (
     } else {
       const prev = findNextNonEmptyGroup(focusGroupIndex.value, -1);
       if (prev >= 0) {
-        const len = gridGroups.value[prev]!.stickers.length;
+        const len = gridGroups.value[prev]!.gridCells.length;
         setFocus(prev, len - 1);
       }
     }
@@ -415,8 +419,14 @@ export const useAlbumGridNav = (
       case " ":
         e.preventDefault();
         if (focusedStickerId.value) {
-          increment(focusedStickerId.value);
-          afterIncrementSticker();
+          if (filter.value === "duplicates") {
+            decrement(focusedStickerId.value, {
+              bypassStickerLock: true,
+            });
+          } else {
+            increment(focusedStickerId.value);
+            afterIncrementSticker();
+          }
         }
         break;
       case "Backspace":
@@ -461,7 +471,7 @@ export const useAlbumGridNav = (
       return;
     }
     const row = groups[focusGroupIndex.value];
-    if (!row || row.stickers.length === 0) {
+    if (!row || row.gridCells.length === 0) {
       const next = findNextNonEmptyGroup(focusGroupIndex.value, 1);
       if (next >= 0) {
         setFocus(next, 0);

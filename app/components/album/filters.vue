@@ -7,6 +7,7 @@ const { filter, groupSort, stickerEditLocked } = useCollection();
 const filterTabItems: TabsItem[] = [
   { label: "Todas", value: "all" },
   { label: "Faltantes", value: "missing" },
+  { label: "Repetidas", value: "duplicates" },
 ];
 
 function setSort(mode: GroupSortMode) {
@@ -18,7 +19,7 @@ const sortMenuItems = computed<DropdownMenuItem[][]>(() => [
   [
     {
       type: "checkbox",
-      label: "Padrão (álbum)",
+      label: "Padrão (Álbum)",
       checked: groupSort.value === "default",
       onUpdateChecked: (v: boolean) => {
         if (v) setSort("default");
@@ -26,7 +27,7 @@ const sortMenuItems = computed<DropdownMenuItem[][]>(() => [
     },
     {
       type: "checkbox",
-      label: "Alfabética (A–Z)",
+      label: "Alfabética (A-Z)",
       checked: groupSort.value === "alphabetic",
       onUpdateChecked: (v: boolean) => {
         if (v) setSort("alphabetic");
@@ -34,18 +35,10 @@ const sortMenuItems = computed<DropdownMenuItem[][]>(() => [
     },
     {
       type: "checkbox",
-      label: "Mais tenho primeiro",
+      label: "Quantidade",
       checked: groupSort.value === "owned",
       onUpdateChecked: (v: boolean) => {
         if (v) setSort("owned");
-      },
-    },
-    {
-      type: "checkbox",
-      label: "Menos tenho primeiro",
-      checked: groupSort.value === "ownedAsc",
-      onUpdateChecked: (v: boolean) => {
-        if (v) setSort("ownedAsc");
       },
     },
   ],
@@ -68,11 +61,12 @@ const sortMenuItems = computed<DropdownMenuItem[][]>(() => [
     />
     <div class="ms-auto flex shrink-0 items-center gap-1.5">
       <UButton
-        color="neutral"
-        variant="outline"
         size="sm"
         square
+        :color="stickerEditLocked ? 'warning' : 'neutral'"
+        :variant="stickerEditLocked ? 'solid' : 'outline'"
         :icon="stickerEditLocked ? 'i-lucide-lock' : 'i-lucide-lock-open'"
+        :aria-pressed="stickerEditLocked"
         :aria-label="
           stickerEditLocked
             ? 'Desbloquear edição das figurinhas'

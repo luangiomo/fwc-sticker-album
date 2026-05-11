@@ -2,7 +2,7 @@
 import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
 
 const { groups } = useAlbum();
-const { getCount } = useCollection();
+const { getCount, filter } = useCollection();
 
 function teamProgressLabel(group: Group) {
   const total = group.stickers.length;
@@ -43,6 +43,7 @@ defineEmits<{
           {{ item.slug }}
         </span>
         <span
+          v-if="filter !== 'duplicates'"
           class="max-w-full text-center text-[10px] tabular-nums leading-tight text-muted pointer-events-none lg:hidden"
         >
           {{ teamProgressLabel(item) }}

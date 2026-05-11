@@ -27,11 +27,7 @@ function normalizeUiConfig(raw: UiConfigRaw | null | undefined): LocalAppConfig 
   const f = raw?.filter;
   const s = raw?.groupSort;
   base.filter =
-    f === "all" || f === "missing"
-      ? f
-      : f === "duplicates"
-        ? "all"
-        : base.filter;
+    f === "all" || f === "missing" || f === "duplicates" ? f : base.filter;
   base.groupSort =
     s === "default" ||
     s === "alphabetic" ||
@@ -57,9 +53,15 @@ function resolvedCookieBundle() {
   let bundle = cookieBundleByApp.get(app);
   if (bundle) return bundle;
 
-  const collection = useLocalStorage<Collection>(COLLECTION_STORAGE_KEY, {}, {
-    mergeDefaults: true,
-  });
+  const collection = useLocalStorage<Collection>(
+    COLLECTION_STORAGE_KEY,
+    {},
+    {
+      mergeDefaults: true,
+      /** Evita mismatch SSR/cliente: servidor e 1º paint hidratam com {}; depois do mount lê localStorage e atualiza verdes. */
+      initOnMounted: true,
+    },
+  );
 
   const legacyCollectionCookie = useCookie<Collection | null>(
     LEGACY_COLLECTION_COOKIE,
@@ -147,8 +149,11 @@ export const useCollection = () => {
     };
   }
 
-  function decrement(stickerId: string) {
-    if (stickerEditLocked.value) return;
+  function decrement(
+    stickerId: string,
+    options?: { bypassStickerLock?: boolean },
+  ) {
+    if (!options?.bypassStickerLock && stickerEditLocked.value) return;
     const current = getCount(stickerId);
     if (current <= 0) return;
     const next = current - 1;
@@ -225,6 +230,8 @@ export const useCollection = () => {
     switch (filter.value) {
       case "missing":
         return stickers.filter((s) => getCount(s.code) === 0);
+      case "duplicates":
+        return stickers.filter((s) => getCount(s.code) > 1);
       default:
         return stickers;
     }

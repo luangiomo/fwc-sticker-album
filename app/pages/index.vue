@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useMediaQuery } from "@vueuse/core";
 import { scrollIntoViewBelowSticky } from "~/utils/scrollBelowSticky";
-import { duplicateBadgeCount } from "~/utils/duplicateDisplay";
+import { duplicateBadgeCount, duplicateExtra } from "~/utils/duplicateDisplay";
 import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
 
 const isLg = useMediaQuery("(min-width: 1024px)");
@@ -9,6 +9,7 @@ const isLg = useMediaQuery("(min-width: 1024px)");
 const { groups } = useAlbum();
 const collection = useCollection();
 const {
+  filter,
   getCount,
   increment,
   decrement,
@@ -22,7 +23,7 @@ const {
 /** When true, only group headers are shown (simple view); false = full sticker grid on home. */
 const simpleHomeVisualization = collection.simpleHomeVisualization;
 
-/** Explicit banner + template binding so lock state stays reactive (avoid destructuring the computed alone). */
+/** Reflete stickerEditLocked (banner travado comentado no template; ainda usado p/ desabilitar ações). */
 const showLockedBanner = computed({
   get: () => collection.stickerEditLocked.value,
   set: (v: boolean) => {
@@ -77,6 +78,13 @@ function groupOwnedProgressLabel(group: Group | null) {
   return formatTeamProgress(owned, group.stickers.length);
 }
 
+function sortDupStickers(stickers: Sticker[]) {
+  return [...stickers].sort((a, b) => {
+    if (a.number !== b.number) return a.number - b.number;
+    return a.code.localeCompare(b.code);
+  });
+}
+
 const renderedGroups = computed(() => {
   const rows = groups
     .map((g) => {
@@ -84,14 +92,30 @@ const renderedGroups = computed(() => {
       const ownedInGroup = g.stickers.filter(
         (s) => getCount(s.code) >= 1
       ).length;
+      const filtered = filterStickers(g.stickers);
+      const gridCells =
+        filter.value === "duplicates"
+          ? (() => {
+              const cells: { key: string; sticker: Sticker }[] = [];
+              for (const s of sortDupStickers(filtered)) {
+                const extras = duplicateExtra(getCount(s.code));
+                for (let i = 0; i < extras; i++) {
+                  cells.push({ key: `${s.code}-${i}`, sticker: s });
+                }
+              }
+              return cells;
+            })()
+          : filtered.map((s) => ({ key: s.id, sticker: s }));
+
       return {
         ...g,
-        stickers: filterStickers(g.stickers),
+        stickers: filtered,
+        gridCells,
         ownedInGroup,
         totalInGroup,
       };
     })
-    .filter((g) => g.stickers.length > 0);
+    .filter((g) => g.gridCells.length > 0);
 
   if (groupSort.value === "alphabetic") {
     return [...rows].sort((a, b) =>
@@ -171,6 +195,13 @@ const mobileStickerGestures = useMobileTapHoldDecrement(() => !isLg.value);
 const mobileGroupDetailGestures = useMobileTapHoldDecrement(() => !isLg.value);
 
 function onStickerCellClick(sticker: Sticker, gIdx: number, sIdx: number) {
+  if (filter.value === "duplicates") {
+    if (!isLg.value && mobileStickerGestures.consumeSkipFollowingClick())
+      return;
+    decrement(sticker.code, { bypassStickerLock: true });
+    setFocus(gIdx, sIdx);
+    return;
+  }
   if (isLg.value) {
     increment(sticker.code);
     setFocus(gIdx, sIdx);
@@ -183,19 +214,48 @@ function onStickerCellClick(sticker: Sticker, gIdx: number, sIdx: number) {
   afterIncrementSticker();
 }
 
+function onStickerPointerDown(
+  e: PointerEvent,
+  sticker: Sticker,
+  gIdx: number,
+  sIdx: number,
+) {
+  if (filter.value === "duplicates") return;
+  mobileStickerGestures.onPointerDown(e, () => {
+    decrement(sticker.code);
+    setFocus(gIdx, sIdx);
+  });
+}
+
+function onStickerPointerUp(
+  e: PointerEvent,
+  sticker: Sticker,
+  gIdx: number,
+  sIdx: number,
+) {
+  if (filter.value === "duplicates") return;
+  mobileStickerGestures.onPointerUp(e, () => {
+    increment(sticker.code);
+    setFocus(gIdx, sIdx);
+    afterIncrementSticker();
+  });
+}
+
 function onStickerContextMenu(
   code: string,
   gIdx: number,
   sIdx: number,
-  e: MouseEvent
+  e: MouseEvent,
 ) {
+  const dupBypass =
+    filter.value === "duplicates" ? { bypassStickerLock: true as const } : undefined;
   if (isLg.value) {
-    decrement(code);
+    decrement(code, dupBypass);
     setFocus(gIdx, sIdx);
     return;
   }
   if (e.button !== 2) return;
-  decrement(code);
+  decrement(code, dupBypass);
   setFocus(gIdx, sIdx);
 }
 
@@ -241,6 +301,7 @@ const mobileClearMenuGroups = computed(() => [
       class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 px-3 py-2 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-950/95 md:px-5 md:pt-5 lg:px-4 lg:pt-8"
     >
       <div class="flex flex-col lg:gap-1">
+        <!-- Banner quando travado — oculto: estado visível no botão de cadeado nos filtros
         <div
           v-if="showLockedBanner"
           class="my-2 flex items-center gap-2 rounded-md border border-amber-200/90 bg-amber-50 px-3 py-1.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300"
@@ -258,6 +319,7 @@ const mobileClearMenuGroups = computed(() => [
             @click="showLockedBanner = false"
           />
         </div>
+        -->
         <div
           class="flex flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
         >
@@ -402,14 +464,16 @@ const mobileClearMenuGroups = computed(() => [
               <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
                 {{ item.name }}
               </h3>
-              <span
-                class="mx-px size-0.5 rounded-full bg-neutral-400 dark:bg-neutral-500"
-              />
-              <span
-                class="shrink-0 tabular-nums text-xs leading-tight text-muted"
-              >
-                {{ formatTeamProgress(item.ownedInGroup, item.totalInGroup) }}
-              </span>
+              <template v-if="filter !== 'duplicates'">
+                <span
+                  class="mx-px size-0.5 rounded-full bg-neutral-400 dark:bg-neutral-500"
+                />
+                <span
+                  class="shrink-0 tabular-nums text-xs leading-tight text-muted"
+                >
+                  {{ formatTeamProgress(item.ownedInGroup, item.totalInGroup) }}
+                </span>
+              </template>
             </div>
             <UIcon
               name="i-lucide-chevron-right"
@@ -422,34 +486,29 @@ const mobileClearMenuGroups = computed(() => [
           class="grid w-full min-w-0 grid-cols-5 gap-1.5 lg:grid-cols-20 lg:gap-1 lg:flex-1"
         >
           <div
-            v-for="(sticker, sIdx) in item.stickers"
-            :key="sticker.id"
+            v-for="(cell, sIdx) in item.gridCells"
+            :key="cell.key"
             role="gridcell"
             :tabindex="cellTabindex(gIdx, sIdx)"
             :data-grid-pos="cellGridPos(gIdx, sIdx)"
-            @click="onStickerCellClick(sticker, gIdx, sIdx)"
-            @pointerdown="
-              mobileStickerGestures.onPointerDown($event, () => {
-                decrement(sticker.code);
-                setFocus(gIdx, sIdx);
-              })
-            "
-            @pointerup="
-              mobileStickerGestures.onPointerUp($event, () => {
-                increment(sticker.code);
-                setFocus(gIdx, sIdx);
-                afterIncrementSticker();
-              })
-            "
+            @click="onStickerCellClick(cell.sticker, gIdx, sIdx)"
+            @pointerdown="onStickerPointerDown($event, cell.sticker, gIdx, sIdx)"
+            @pointerup="onStickerPointerUp($event, cell.sticker, gIdx, sIdx)"
             @pointercancel="mobileStickerGestures.onPointerCancel()"
             @contextmenu.prevent="
-              onStickerContextMenu(sticker.code, gIdx, sIdx, $event)
+              onStickerContextMenu(cell.sticker.code, gIdx, sIdx, $event)
             "
             :class="[
-              'relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-8 lg:min-h-0 lg:rounded-sm lg:px-0',
-              getCount(sticker.code) >= 1
-                ? 'bg-green-600 text-white dark:bg-green-600 dark:text-white'
-                : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
+              'relative flex min-h-11 items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-8 lg:min-h-0 lg:rounded-sm lg:px-0',
+              filter === 'duplicates'
+                ? [
+                    'cursor-pointer bg-blue-600 text-white hover:bg-blue-700 hover:text-white active:scale-95 dark:bg-blue-500 dark:text-blue-50 dark:hover:bg-blue-600 dark:hover:text-blue-50',
+                  ]
+                : [
+                    getCount(cell.sticker.code) >= 1
+                      ? 'cursor-pointer bg-green-600 text-white dark:bg-green-600 dark:text-white'
+                      : 'cursor-pointer bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
+                  ],
               isLg &&
                 gIdx === focusGroupIndex &&
                 sIdx === focusStickerIndex &&
@@ -457,14 +516,17 @@ const mobileClearMenuGroups = computed(() => [
             ]"
           >
             <span class="text-xs leading-none">
-              {{ sticker.name }}
+              {{ cell.sticker.name }}
             </span>
             <span
-              v-if="showDuplicateCountLabel(sticker.code)"
+              v-if="
+                filter !== 'duplicates' &&
+                showDuplicateCountLabel(cell.sticker.code)
+              "
               class="pointer-events-none absolute -right-1 -top-1 z-1 min-w-4 rounded px-0.5 py-px text-center text-[9px] font-semibold leading-none tabular-nums bg-neutral-900 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-900"
-              :title="`${getCount(sticker.code)} na coleção · +${duplicateBadgeCount(getCount(sticker.code))} no selo`"
+              :title="`${getCount(cell.sticker.code)} na coleção · +${duplicateBadgeCount(getCount(cell.sticker.code))} no selo`"
             >
-              +{{ duplicateBadgeCount(getCount(sticker.code)) }}
+              +{{ duplicateBadgeCount(getCount(cell.sticker.code)) }}
             </span>
           </div>
         </div>

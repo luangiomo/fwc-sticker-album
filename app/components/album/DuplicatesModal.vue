@@ -16,7 +16,7 @@ const sortOptions: { label: string; value: DupGroupSortMode }[] = [
 ];
 
 const { groups } = useAlbum();
-const { getCount, decrement, stickerEditLocked, stats } = useCollection();
+const { getCount, decrement, stats } = useCollection();
 
 function extrasInGroup(dupStickers: Sticker[]) {
   return dupStickers.reduce(
@@ -134,10 +134,8 @@ function expandedDuplicateCells(dupStickers: Sticker[]) {
               v-for="cell in expandedDuplicateCells(row.dupStickers)"
               :key="cell.key"
               type="button"
-              :disabled="stickerEditLocked"
-              class="relative flex min-h-11 items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none lg:h-9 lg:min-h-0 lg:rounded-sm bg-blue-600 text-white dark:bg-blue-500 dark:text-blue-50 transition-opacity"
-              :class="stickerEditLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95'"
-              @click="decrement(cell.sticker.code)"
+              class="relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none transition-opacity lg:h-9 lg:min-h-0 lg:rounded-sm bg-blue-600 text-white hover:bg-blue-700 active:scale-95 dark:bg-blue-500 dark:text-blue-50 dark:hover:bg-blue-600"
+              @click="decrement(cell.sticker.code, { bypassStickerLock: true })"
             >
               <span class="px-0.5">{{ cell.sticker.name }}</span>
             </button>
