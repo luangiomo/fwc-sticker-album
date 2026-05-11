@@ -27,7 +27,7 @@ const STICKER_FIND_SELECTOR = "[data-sticker-find]";
 const STICKER_FIND_DEBOUNCE_MS = 800;
 
 export type AlbumGridNavOptions = {
-  /** Enter/Espaço na grade: abre modal de quantidade (aba normal). */
+  /** Enter/Espaço: sem figurinha incrementa; com figurinha abre o modal de quantidade. */
   onStickerQuantityOpen?: (sticker: Sticker) => void;
 };
 
@@ -53,7 +53,7 @@ export const useAlbumGridNav = (
     }
   }
 
-  const { increment, resetCount, decrement, filter } = useCollection();
+  const { increment, resetCount, decrement, filter, getCount } = useCollection();
 
   const focusedStickerId = computed(() => {
     const group = gridGroups.value[focusGroupIndex.value];
@@ -432,7 +432,10 @@ export const useAlbumGridNav = (
             const g = gridGroups.value[focusGroupIndex.value];
             const cell = g?.gridCells[focusStickerIndex.value];
             const sticker = cell?.sticker;
-            if (sticker && opts?.onStickerQuantityOpen) {
+            if (sticker && getCount(sticker.code) < 1) {
+              increment(focusedStickerId.value);
+              afterIncrementSticker();
+            } else if (sticker && opts?.onStickerQuantityOpen) {
               opts.onStickerQuantityOpen(sticker);
             } else {
               increment(focusedStickerId.value);

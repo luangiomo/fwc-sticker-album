@@ -1,7 +1,6 @@
 /**
- * Toque longo (touch/stylus): apenas decremento — não marca skipFollowingClick,
- * para o @click seguinte poder tratar duplo toque / modal.
- * Ignora mouse (desktop usa click/dblclick).
+ * Toque longo (touch/stylus): decremento em mobile.
+ * Ignora mouse (desktop usa clique / menu de contexto).
  */
 export function useMobileStickerLongPress(
   isMobileLayout: () => boolean,

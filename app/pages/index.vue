@@ -10,6 +10,7 @@ const collection = useCollection();
 const {
   filter,
   getCount,
+  increment,
   decrement,
   filterStickers,
   groupSort,
@@ -144,7 +145,6 @@ const renderedGroups = computed(() => {
 
 const { openStickerQuantity } = useStickerQuantityModal();
 
-const stickerDoubleTap = useStickerDoubleTap();
 const stickerLongPress = useMobileStickerLongPress(() => !isLg.value);
 
 const openStickerQuantityModal = (sticker: Sticker) => {
@@ -216,16 +216,10 @@ function onStickerCellClick(sticker: Sticker, gIdx: number, sIdx: number) {
 
   setFocus(gIdx, sIdx);
 
-  if (isLg.value) return;
-
-  if (stickerDoubleTap.recordTap(sticker)) {
-    openStickerQuantityModal(sticker);
+  if (getCount(sticker.code) < 1) {
+    increment(sticker.code);
+    return;
   }
-}
-
-function onStickerCellDblClick(sticker: Sticker) {
-  if (filter.value === "duplicates") return;
-  stickerDoubleTap.reset();
   openStickerQuantityModal(sticker);
 }
 
@@ -270,14 +264,10 @@ function onStickerContextMenu(
 }
 
 function onGroupDetailStickerClick(sticker: Sticker) {
-  if (isLg.value) return;
-  if (stickerDoubleTap.recordTap(sticker)) {
-    openStickerQuantityModal(sticker);
+  if (getCount(sticker.code) < 1) {
+    increment(sticker.code);
+    return;
   }
-}
-
-function onGroupDetailStickerDblClick(sticker: Sticker) {
-  stickerDoubleTap.reset();
   openStickerQuantityModal(sticker);
 }
 
@@ -539,7 +529,6 @@ const mobileClearMenuGroups = computed(() => [
             :tabindex="cellTabindex(gIdx, sIdx)"
             :data-grid-pos="cellGridPos(gIdx, sIdx)"
             @click="onStickerCellClick(cell.sticker, gIdx, sIdx)"
-            @dblclick.prevent.stop="onStickerCellDblClick(cell.sticker)"
             @pointerdown="onStickerPointerDown($event, cell.sticker, gIdx, sIdx)"
             @pointerup="onStickerPointerUp($event)"
             @pointercancel="onStickerPointerCancel()"
@@ -656,7 +645,6 @@ const mobileClearMenuGroups = computed(() => [
                   : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
               ]"
               @click="onGroupDetailStickerClick(sticker)"
-              @dblclick.prevent.stop="onGroupDetailStickerDblClick(sticker)"
               @pointerdown="onGroupDetailPointerDown($event, sticker)"
               @pointerup="onGroupDetailPointerUp($event)"
               @pointercancel="onGroupDetailPointerCancel()"

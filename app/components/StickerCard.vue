@@ -3,24 +3,20 @@ const props = defineProps<{ sticker: Sticker }>();
 
 const isLg = useLgUp();
 const stickerLongPress = useMobileStickerLongPress(() => !isLg.value);
-const stickerDoubleTap = useStickerDoubleTap();
 
 const { openStickerQuantity } = useStickerQuantityModal();
 
-const { getCount, decrement } = useCollection();
+const { getCount, increment, decrement } = useCollection();
 
 const count = computed(() => getCount(props.sticker.code));
 const owned = computed(() => count.value >= 1);
 
+/** Sem a figurinha: um toque/clique adiciona. Com a figurinha: abre o modal para ajustar quantidade. */
 function onCardClick() {
-  if (isLg.value) return;
-  if (stickerDoubleTap.recordTap(props.sticker)) {
-    openStickerQuantity(props.sticker);
+  if (!owned.value) {
+    increment(props.sticker.code);
+    return;
   }
-}
-
-function onCardDblClick() {
-  stickerDoubleTap.reset();
   openStickerQuantity(props.sticker);
 }
 
@@ -49,7 +45,6 @@ function onCardContextMenu(e: MouseEvent) {
     <button
       type="button"
       @click="onCardClick"
-      @dblclick.prevent.stop="onCardDblClick"
       @pointerdown="onPointerDown"
       @pointerup="onPointerUp"
       @pointercancel="stickerLongPress.pointerCancel()"
