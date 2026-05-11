@@ -29,7 +29,12 @@ function normalizeUiConfig(raw: UiConfigRaw | null | undefined): LocalAppConfig 
         ? "all"
         : base.filter;
   base.groupSort =
-    s === "default" || s === "alphabetic" || s === "owned" ? s : base.groupSort;
+    s === "default" ||
+    s === "alphabetic" ||
+    s === "owned" ||
+    s === "ownedAsc"
+      ? s
+      : base.groupSort;
   base.stickerEditLocked = raw?.stickerEditLocked === true;
   base.simpleHomeVisualization =
     raw?.simpleHomeVisualization === true ||
@@ -37,7 +42,17 @@ function normalizeUiConfig(raw: UiConfigRaw | null | undefined): LocalAppConfig 
   return base;
 }
 
-export const useCollection = () => {
+/** One ref per cookie per app. Multiple `useCollection()` callers must share it or UI can drift from persisted cookie (BroadcastChannel is not guaranteed). */
+const cookieBundleByApp = new WeakMap<
+  object,
+  { collection: Ref<Collection>; localConfig: Ref<LocalAppConfig> }
+>();
+
+function resolvedCookieBundle() {
+  const app = useNuxtApp();
+  let bundle = cookieBundleByApp.get(app);
+  if (bundle) return bundle;
+
   const collection = useCookie<Collection>(COOKIE_NAME, {
     default: () => ({}),
     sameSite: "lax",
@@ -49,6 +64,14 @@ export const useCollection = () => {
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 365 * 5,
   });
+
+  bundle = { collection, localConfig };
+  cookieBundleByApp.set(app, bundle);
+  return bundle;
+}
+
+export const useCollection = () => {
+  const { collection, localConfig } = resolvedCookieBundle();
 
   const filter = computed({
     get: () => normalizeUiConfig(localConfig.value).filter,

@@ -1,56 +1,95 @@
 <script setup lang="ts">
-import type { FilterMode, GroupSortMode } from "#shared/types/album";
+import type { DropdownMenuItem, TabsItem } from "@nuxt/ui";
+import type { GroupSortMode } from "#shared/types/album";
 
-const { filter, groupSort } = useCollection();
+const { filter, groupSort, stickerEditLocked } = useCollection();
 
-const filters: { label: string; value: FilterMode }[] = [
+const filterTabItems: TabsItem[] = [
   { label: "Todas", value: "all" },
   { label: "Faltantes", value: "missing" },
 ];
 
-type SortModeItem = {
-  value: GroupSortMode;
-  label?: string;
-  icon?: string;
-  ariaLabel?: string;
-};
+function setSort(mode: GroupSortMode) {
+  groupSort.value = mode;
+}
 
-const sortModes: SortModeItem[] = [
-  { label: "Padrão", value: "default" },
-  { label: "A-Z", value: "alphabetic" },
-  {
-    value: "owned",
-    icon: "i-lucide-arrow-down-wide-narrow",
-    ariaLabel: "Ordenar pelo que mais tenho",
-  },
-];
+const sortMenuItems = computed<DropdownMenuItem[][]>(() => [
+  [{ type: "label", label: "Ordenar equipes" }],
+  [
+    {
+      type: "checkbox",
+      label: "Padrão (álbum)",
+      checked: groupSort.value === "default",
+      onUpdateChecked: (v: boolean) => {
+        if (v) setSort("default");
+      },
+    },
+    {
+      type: "checkbox",
+      label: "Alfabética (A–Z)",
+      checked: groupSort.value === "alphabetic",
+      onUpdateChecked: (v: boolean) => {
+        if (v) setSort("alphabetic");
+      },
+    },
+    {
+      type: "checkbox",
+      label: "Mais tenho primeiro",
+      checked: groupSort.value === "owned",
+      onUpdateChecked: (v: boolean) => {
+        if (v) setSort("owned");
+      },
+    },
+    {
+      type: "checkbox",
+      label: "Menos tenho primeiro",
+      checked: groupSort.value === "ownedAsc",
+      onUpdateChecked: (v: boolean) => {
+        if (v) setSort("ownedAsc");
+      },
+    },
+  ],
+]);
 </script>
 
 <template>
   <div
-    class="flex flex-wrap gap-2 py-2 max-lg:gap-2 lg:gap-2 lg:py-2 max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:pb-1"
+    class="flex min-w-0 flex-1 flex-nowrap items-center gap-2 max-sm:overflow-x-auto max-sm:pb-px"
   >
-    <UFieldGroup size="sm" class="max-sm:shrink-0">
+    <UTabs
+      v-model="filter"
+      color="neutral"
+      variant="pill"
+      size="sm"
+      :content="false"
+      :items="filterTabItems"
+      class="min-w-0 shrink"
+      :ui="{ root: 'min-w-0 shrink', list: 'min-w-0 flex-nowrap' }"
+    />
+    <div class="ms-auto flex shrink-0 items-center gap-1.5">
       <UButton
-        v-for="f in filters"
-        :key="f.value"
         color="neutral"
-        :variant="filter === f.value ? 'solid' : 'outline'"
-        :label="f.label"
-        @click="filter = f.value"
+        variant="outline"
+        size="sm"
+        square
+        :icon="stickerEditLocked ? 'i-lucide-lock' : 'i-lucide-lock-open'"
+        :aria-label="
+          stickerEditLocked
+            ? 'Desbloquear edição das figurinhas'
+            : 'Travar edição das figurinhas'
+        "
+        @click="stickerEditLocked = !stickerEditLocked"
       />
-    </UFieldGroup>
-    <UFieldGroup size="sm" class="max-sm:shrink-0">
-      <UButton
-        v-for="s in sortModes"
-        :key="s.value"
-        color="neutral"
-        :variant="groupSort === s.value ? 'solid' : 'outline'"
-        :label="s.label"
-        :icon="s.icon"
-        :aria-label="s.ariaLabel"
-        @click="groupSort = s.value"
-      />
-    </UFieldGroup>
+      <UDropdownMenu :items="sortMenuItems" :content="{ align: 'end' }">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          square
+          icon="i-lucide-arrow-up-down"
+          aria-label="Ordenação das equipes"
+        />
+      </UDropdownMenu>
+    </div>
   </div>
 </template>

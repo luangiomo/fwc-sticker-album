@@ -173,11 +173,6 @@ const importModalTitle = computed(() => {
   return "Importação";
 });
 
-function onLockMenuSelect(e: Event) {
-  e.preventDefault();
-  stickerEditLocked.value = !stickerEditLocked.value;
-}
-
 function onSimpleHomeVisualizationMenuSelect(e: Event) {
   e.preventDefault();
   simpleHomeVisualization.value = !simpleHomeVisualization.value;
@@ -185,16 +180,6 @@ function onSimpleHomeVisualizationMenuSelect(e: Event) {
 
 const dropdownItems = computed(() => {
   const locked = stickerEditLocked.value;
-
-  const lockToggle = [
-    {
-      label: "Travar edição",
-      icon: locked ? "i-lucide-lock" : "i-lucide-lock-open",
-      slot: "lockSwitch" as const,
-      checked: locked,
-      onSelect: onLockMenuSelect,
-    },
-  ];
 
   const homeGridToggle = [
     {
@@ -209,7 +194,6 @@ const dropdownItems = computed(() => {
   ];
 
   const core = [
-    lockToggle,
     homeGridToggle,
     [
       {
@@ -274,13 +258,6 @@ const dropdownItems = computed(() => {
         </span>
       </UButton>
 
-      <template #lockSwitch-trailing="{ item }">
-        <USwitch
-          :model-value="item.checked"
-          tabindex="-1"
-          @click.stop.prevent="onLockMenuSelect($event)"
-        />
-      </template>
       <template #simpleVizSwitch-trailing="{ item }">
         <USwitch
           :model-value="item.checked"

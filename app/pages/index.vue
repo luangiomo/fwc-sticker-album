@@ -108,6 +108,15 @@ const renderedGroups = computed(() => {
     });
   }
 
+  if (groupSort.value === "ownedAsc") {
+    return [...rows].sort((a, b) => {
+      if (a.ownedInGroup !== b.ownedInGroup) {
+        return a.ownedInGroup - b.ownedInGroup;
+      }
+      return a.slug.localeCompare(b.slug, "pt", { sensitivity: "base" });
+    });
+  }
+
   return rows;
 });
 
@@ -332,6 +341,13 @@ const mobileClearMenuGroups = computed(() => [
 
         <AlbumProgress />
         <p
+          v-if="simpleHomeVisualization"
+          class="text-[11px] leading-snug text-muted max-lg:mt-0.5 lg:text-xs"
+        >
+          Visualização simples: a grade de figurinhas está oculta aqui. Toque numa
+          equipe para abrir a lista com verde (já tenho) e cinza (falta).
+        </p>
+        <p
           v-if="stickerFindOpen && isLg"
           class="hidden text-[11px] leading-snug text-muted lg:block lg:text-right"
         >
@@ -432,7 +448,7 @@ const mobileClearMenuGroups = computed(() => [
             :class="[
               'relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-8 lg:min-h-0 lg:rounded-sm lg:px-0',
               getCount(sticker.code) >= 1
-                ? 'bg-green-600 text-white dark:bg-green-500 dark:text-green-800'
+                ? 'bg-green-600 text-white dark:bg-green-600 dark:text-white'
                 : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
               isLg &&
                 gIdx === focusGroupIndex &&
@@ -528,7 +544,7 @@ const mobileClearMenuGroups = computed(() => [
               class="relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-9 lg:min-h-0 lg:rounded-sm"
               :class="[
                 getCount(sticker.code) >= 1
-                  ? 'bg-green-600 text-white dark:bg-green-500 dark:text-green-800'
+                  ? 'bg-green-600 text-white dark:bg-green-600 dark:text-white'
                   : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
               ]"
               @click="onGroupDetailStickerClick(sticker)"

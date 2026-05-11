@@ -50,7 +50,7 @@ function onCardContextMenu(e: MouseEvent) {
       :class="[
         'relative px-2 py-3 rounded-full',
         owned
-          ? 'bg-green-600 text-white dark:bg-green-500'
+          ? 'bg-green-600 text-white dark:bg-green-600 dark:text-white'
           : 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100',
         // sticker.variant === 'chromo' && 'bg-amber-500/10',
       ]"

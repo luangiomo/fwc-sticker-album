@@ -36,7 +36,11 @@ export type Collection = Record<string, number>;
 
 export type FilterMode = "all" | "missing";
 
-export type GroupSortMode = "default" | "alphabetic" | "owned";
+export type GroupSortMode =
+  | "default"
+  | "alphabetic"
+  | "owned"
+  | "ownedAsc";
 
 export type LocalAppConfig = {
   filter: FilterMode;
