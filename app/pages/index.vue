@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { useMediaQuery } from "@vueuse/core";
 import { scrollIntoViewBelowSticky } from "~/utils/scrollBelowSticky";
-import { duplicateBadgeCount, duplicateExtra } from "~/utils/duplicateDisplay";
+import { duplicateExtra } from "~/utils/duplicateDisplay";
 import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
 
-const isLg = useMediaQuery("(min-width: 1024px)");
+const isLg = useLgUp();
 
 const { groups } = useAlbum();
 const collection = useCollection();
 const {
   filter,
   getCount,
-  increment,
   decrement,
   filterStickers,
   groupSort,
@@ -144,6 +142,20 @@ const renderedGroups = computed(() => {
   return rows;
 });
 
+const { openStickerQuantity } = useStickerQuantityModal();
+
+const stickerDoubleTap = useStickerDoubleTap();
+const stickerLongPress = useMobileStickerLongPress(() => !isLg.value);
+
+const openStickerQuantityModal = (sticker: Sticker) => {
+  gridNav.closeStickerFind();
+  openStickerQuantity(sticker);
+};
+
+const gridNav = useAlbumGridNav(renderedGroups, {
+  onStickerQuantityOpen: openStickerQuantityModal,
+});
+
 const {
   focusGroupIndex,
   focusStickerIndex,
@@ -157,15 +169,20 @@ const {
   findMatchSummary,
   exitSearchMode,
   enterStickerSearchMode,
-  afterIncrementSticker,
   STICKER_FIND_INPUT_ID,
-} = useAlbumGridNav(renderedGroups);
+} = gridNav;
 
 function openGroupDetail(row: { id: string }) {
   const g = groups.find((x) => x.id === row.id) ?? null;
   if (!g) return;
   groupDetailGroup.value = g;
   groupDetailOpen.value = true;
+}
+
+/** Cabeçalho da equipa abre o modal só fora da aba Repetidas. */
+function tryOpenGroupDetail(row: { id: string }) {
+  if (filter.value === "duplicates") return;
+  openGroupDetail(row);
 }
 
 /** Figurinhas visíveis no modal da equipa (respeita Todas / Faltantes). */
@@ -185,33 +202,31 @@ function onTeamSelect(groupId: string) {
   });
 }
 
-/** Selo +N nas células quando há cópias extra. */
+/** Selo com quantidade total nas células quando há mais de uma cópia. */
 function showDuplicateCountLabel(code: string) {
-  const n = getCount(code);
-  return duplicateBadgeCount(n) > 0;
+  return getCount(code) > 1;
 }
-
-const mobileStickerGestures = useMobileTapHoldDecrement(() => !isLg.value);
-const mobileGroupDetailGestures = useMobileTapHoldDecrement(() => !isLg.value);
 
 function onStickerCellClick(sticker: Sticker, gIdx: number, sIdx: number) {
   if (filter.value === "duplicates") {
-    if (!isLg.value && mobileStickerGestures.consumeSkipFollowingClick())
-      return;
     decrement(sticker.code, { bypassStickerLock: true });
     setFocus(gIdx, sIdx);
     return;
   }
-  if (isLg.value) {
-    increment(sticker.code);
-    setFocus(gIdx, sIdx);
-    afterIncrementSticker();
-    return;
-  }
-  if (mobileStickerGestures.consumeSkipFollowingClick()) return;
-  increment(sticker.code);
+
   setFocus(gIdx, sIdx);
-  afterIncrementSticker();
+
+  if (isLg.value) return;
+
+  if (stickerDoubleTap.recordTap(sticker)) {
+    openStickerQuantityModal(sticker);
+  }
+}
+
+function onStickerCellDblClick(sticker: Sticker) {
+  if (filter.value === "duplicates") return;
+  stickerDoubleTap.reset();
+  openStickerQuantityModal(sticker);
 }
 
 function onStickerPointerDown(
@@ -221,24 +236,19 @@ function onStickerPointerDown(
   sIdx: number,
 ) {
   if (filter.value === "duplicates") return;
-  mobileStickerGestures.onPointerDown(e, () => {
+  stickerLongPress.pointerDown(e, () => {
     decrement(sticker.code);
     setFocus(gIdx, sIdx);
   });
 }
 
-function onStickerPointerUp(
-  e: PointerEvent,
-  sticker: Sticker,
-  gIdx: number,
-  sIdx: number,
-) {
+function onStickerPointerUp(e: PointerEvent) {
   if (filter.value === "duplicates") return;
-  mobileStickerGestures.onPointerUp(e, () => {
-    increment(sticker.code);
-    setFocus(gIdx, sIdx);
-    afterIncrementSticker();
-  });
+  stickerLongPress.pointerUp(e);
+}
+
+function onStickerPointerCancel() {
+  stickerLongPress.pointerCancel();
 }
 
 function onStickerContextMenu(
@@ -260,14 +270,31 @@ function onStickerContextMenu(
 }
 
 function onGroupDetailStickerClick(sticker: Sticker) {
-  if (isLg.value) {
-    increment(sticker.code);
-    afterIncrementSticker();
-    return;
+  if (isLg.value) return;
+  if (stickerDoubleTap.recordTap(sticker)) {
+    openStickerQuantityModal(sticker);
   }
-  if (mobileGroupDetailGestures.consumeSkipFollowingClick()) return;
-  increment(sticker.code);
-  afterIncrementSticker();
+}
+
+function onGroupDetailStickerDblClick(sticker: Sticker) {
+  stickerDoubleTap.reset();
+  openStickerQuantityModal(sticker);
+}
+
+function onGroupDetailPointerDown(e: PointerEvent, sticker: Sticker) {
+  if (!isLg.value) {
+    stickerLongPress.pointerDown(e, () => {
+      decrement(sticker.code);
+    });
+  }
+}
+
+function onGroupDetailPointerUp(e: PointerEvent) {
+  if (!isLg.value) stickerLongPress.pointerUp(e);
+}
+
+function onGroupDetailPointerCancel() {
+  stickerLongPress.pointerCancel();
 }
 
 function onGroupDetailStickerContextMenu(sticker: Sticker, e: MouseEvent) {
@@ -439,20 +466,39 @@ const mobileClearMenuGroups = computed(() => [
           class="flex w-full min-w-0 flex-row items-center gap-3 lg:w-auto lg:max-w-none lg:shrink-0 lg:flex-col lg:items-center lg:gap-2"
         >
           <div
-            role="button"
-            tabindex="0"
-            class="shrink-0 cursor-pointer rounded-sm bg-cover bg-center outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary"
+            :role="filter === 'duplicates' ? undefined : 'button'"
+            :tabindex="filter === 'duplicates' ? -1 : 0"
+            class="shrink-0 rounded-sm bg-cover bg-center outline-none"
+            :class="
+              filter === 'duplicates'
+                ? 'cursor-default'
+                : 'cursor-pointer hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary'
+            "
             :style="groupSpriteStyle(item)"
-            :aria-label="`Ver figurinhas de ${item.name}`"
-            @click="openGroupDetail(item)"
-            @keydown.enter.prevent="openGroupDetail(item)"
-            @keydown.space.prevent="openGroupDetail(item)"
+            :aria-label="
+              filter === 'duplicates'
+                ? `${item.slug}, ${item.name}`
+                : `Ver figurinhas de ${item.name}`
+            "
+            @click="tryOpenGroupDetail(item)"
+            @keydown.enter.prevent="tryOpenGroupDetail(item)"
+            @keydown.space.prevent="tryOpenGroupDetail(item)"
           />
-          <button
-            type="button"
-            class="flex min-h-0 min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 rounded-sm text-left outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
-            :aria-label="`Abrir figurinhas de ${item.name}`"
-            @click="openGroupDetail(item)"
+          <component
+            :is="filter === 'duplicates' ? 'div' : 'button'"
+            :type="filter === 'duplicates' ? undefined : 'button'"
+            class="flex min-h-0 min-w-0 flex-1 items-center justify-between gap-2 rounded-sm text-left outline-none lg:hidden"
+            :class="
+              filter === 'duplicates'
+                ? 'cursor-default'
+                : 'cursor-pointer hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary'
+            "
+            :aria-label="
+              filter === 'duplicates'
+                ? `${item.slug}, ${item.name}`
+                : `Abrir figurinhas de ${item.name}`
+            "
+            @click="tryOpenGroupDetail(item)"
           >
             <div class="flex flex-1 items-center gap-2">
               <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
@@ -476,10 +522,11 @@ const mobileClearMenuGroups = computed(() => [
               </template>
             </div>
             <UIcon
+              v-if="filter !== 'duplicates'"
               name="i-lucide-chevron-right"
               class="size-3.5 shrink-0 text-muted"
             />
-          </button>
+          </component>
         </div>
         <div
           v-if="!simpleHomeVisualization"
@@ -492,9 +539,10 @@ const mobileClearMenuGroups = computed(() => [
             :tabindex="cellTabindex(gIdx, sIdx)"
             :data-grid-pos="cellGridPos(gIdx, sIdx)"
             @click="onStickerCellClick(cell.sticker, gIdx, sIdx)"
+            @dblclick.prevent.stop="onStickerCellDblClick(cell.sticker)"
             @pointerdown="onStickerPointerDown($event, cell.sticker, gIdx, sIdx)"
-            @pointerup="onStickerPointerUp($event, cell.sticker, gIdx, sIdx)"
-            @pointercancel="mobileStickerGestures.onPointerCancel()"
+            @pointerup="onStickerPointerUp($event)"
+            @pointercancel="onStickerPointerCancel()"
             @contextmenu.prevent="
               onStickerContextMenu(cell.sticker.code, gIdx, sIdx, $event)
             "
@@ -518,16 +566,14 @@ const mobileClearMenuGroups = computed(() => [
             <span class="text-xs leading-none">
               {{ cell.sticker.name }}
             </span>
-            <span
+            <AlbumDuplicateExtrasBadge
               v-if="
                 filter !== 'duplicates' &&
                 showDuplicateCountLabel(cell.sticker.code)
               "
-              class="pointer-events-none absolute -right-1 -top-1 z-1 min-w-4 rounded px-0.5 py-px text-center text-[9px] font-semibold leading-none tabular-nums bg-neutral-900 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-900"
-              :title="`${getCount(cell.sticker.code)} na coleção · +${duplicateBadgeCount(getCount(cell.sticker.code))} no selo`"
-            >
-              +{{ duplicateBadgeCount(getCount(cell.sticker.code)) }}
-            </span>
+              :count="getCount(cell.sticker.code)"
+              :title="`${getCount(cell.sticker.code)} na coleção`"
+            />
           </div>
         </div>
       </div>
@@ -610,30 +656,20 @@ const mobileClearMenuGroups = computed(() => [
                   : 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
               ]"
               @click="onGroupDetailStickerClick(sticker)"
-              @pointerdown="
-                mobileGroupDetailGestures.onPointerDown($event, () => {
-                  decrement(sticker.code);
-                })
-              "
-              @pointerup="
-                mobileGroupDetailGestures.onPointerUp($event, () => {
-                  increment(sticker.code);
-                  afterIncrementSticker();
-                })
-              "
-              @pointercancel="mobileGroupDetailGestures.onPointerCancel()"
+              @dblclick.prevent.stop="onGroupDetailStickerDblClick(sticker)"
+              @pointerdown="onGroupDetailPointerDown($event, sticker)"
+              @pointerup="onGroupDetailPointerUp($event)"
+              @pointercancel="onGroupDetailPointerCancel()"
               @contextmenu.prevent="
                 onGroupDetailStickerContextMenu(sticker, $event)
               "
             >
               <span class="px-0.5">{{ sticker.name }}</span>
-              <span
+              <AlbumDuplicateExtrasBadge
                 v-if="showDuplicateCountLabel(sticker.code)"
-                class="pointer-events-none absolute -right-1 -top-1 z-1 min-w-4 rounded px-0.5 py-px text-center text-[9px] font-semibold leading-none tabular-nums bg-neutral-900 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-900"
-                :title="`${getCount(sticker.code)} na coleção · +${duplicateBadgeCount(getCount(sticker.code))} no selo`"
-              >
-                +{{ duplicateBadgeCount(getCount(sticker.code)) }}
-              </span>
+                :count="getCount(sticker.code)"
+                :title="`${getCount(sticker.code)} na coleção`"
+              />
             </button>
           </div>
         </div>

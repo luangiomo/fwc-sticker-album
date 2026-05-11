@@ -1,4 +1,3 @@
-import { useMediaQuery } from "@vueuse/core";
 import {
   ensureVisibleBelowSticky,
   scrollIntoViewBelowSticky,
@@ -27,10 +26,16 @@ const STICKER_FIND_INPUT_ID = "sticker-find-input";
 const STICKER_FIND_SELECTOR = "[data-sticker-find]";
 const STICKER_FIND_DEBOUNCE_MS = 800;
 
+export type AlbumGridNavOptions = {
+  /** Enter/Espaço na grade: abre modal de quantidade (aba normal). */
+  onStickerQuantityOpen?: (sticker: Sticker) => void;
+};
+
 export const useAlbumGridNav = (
-  gridGroups: Ref<GridGroup[]> | ComputedRef<GridGroup[]>
+  gridGroups: Ref<GridGroup[]> | ComputedRef<GridGroup[]>,
+  opts?: AlbumGridNavOptions,
 ) => {
-  const isDesktopNav = useMediaQuery("(min-width: 1024px)");
+  const isDesktopNav = useLgUp();
 
   const focusGroupIndex = ref(-1);
   const focusStickerIndex = ref(-1);
@@ -424,8 +429,15 @@ export const useAlbumGridNav = (
               bypassStickerLock: true,
             });
           } else {
-            increment(focusedStickerId.value);
-            afterIncrementSticker();
+            const g = gridGroups.value[focusGroupIndex.value];
+            const cell = g?.gridCells[focusStickerIndex.value];
+            const sticker = cell?.sticker;
+            if (sticker && opts?.onStickerQuantityOpen) {
+              opts.onStickerQuantityOpen(sticker);
+            } else {
+              increment(focusedStickerId.value);
+              afterIncrementSticker();
+            }
           }
         }
         break;
