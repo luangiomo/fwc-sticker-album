@@ -87,7 +87,7 @@ const renderedGroups = computed(() => {
     .map((g) => {
       const totalInGroup = g.stickers.length;
       const ownedInGroup = g.stickers.filter(
-        (s) => getCount(s.code) >= 1,
+        (s) => getCount(s.code) >= 1
       ).length;
       const filtered = filterStickers(g.stickers);
       const gridCells =
@@ -116,7 +116,7 @@ const renderedGroups = computed(() => {
 
   if (groupSort.value === "alphabetic") {
     return [...rows].sort((a, b) =>
-      a.slug.localeCompare(b.slug, "pt", { sensitivity: "base" }),
+      a.slug.localeCompare(b.slug, "pt", { sensitivity: "base" })
     );
   }
 
@@ -435,30 +435,27 @@ function onGroupDetailStickerContextMenu(sticker: Sticker, e: MouseEvent) {
               @click="tryOpenGroupDetail(item)"
             >
               <div class="flex min-w-0 flex-1 items-center gap-1.5">
-                <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+                <h3
+                  class="shrink-0 whitespace-nowrap text-sm font-medium leading-tight"
+                >
                   {{ item.slug }}
                 </h3>
                 <span
                   class="mx-px size-0.5 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500"
                 />
-                <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+                <h3
+                  class="min-w-0 flex-1 truncate text-sm font-medium leading-tight"
+                >
                   {{ item.name }}
                 </h3>
-                <template v-if="filter !== 'duplicates'">
-                  <span
-                    class="mx-px size-0.5 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500"
-                  />
-                  <span
-                    class="shrink-0 tabular-nums text-xs leading-tight text-muted"
-                  >
-                    {{
-                      formatTeamProgress(item.ownedInGroup, item.totalInGroup)
-                    }}
-                  </span>
-                </template>
+                <span
+                  class="shrink-0 tabular-nums text-xs leading-tight text-muted"
+                >
+                  {{ formatTeamProgress(item.ownedInGroup, item.totalInGroup) }}
+                </span>
               </div>
               <UIcon
-                v-if="filter !== 'duplicates'"
+                v-if="simpleHomeVisualization && filter !== 'duplicates'"
                 name="i-lucide-chevron-right"
                 class="size-3.5 shrink-0 text-muted"
               />
