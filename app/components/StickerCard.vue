@@ -1,8 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{ sticker: Sticker }>();
 
-const isLg = useLgUp();
-const stickerLongPress = useMobileStickerLongPress(() => !isLg.value);
+const stickerLongPress = useMobileStickerLongPress(() => true);
 
 const { openStickerQuantity } = useStickerQuantityModal();
 
@@ -31,10 +30,6 @@ function onPointerUp(e: PointerEvent) {
 }
 
 function onCardContextMenu(e: MouseEvent) {
-  if (isLg.value) {
-    decrement(props.sticker.code);
-    return;
-  }
   if (e.button !== 2) return;
   decrement(props.sticker.code);
 }

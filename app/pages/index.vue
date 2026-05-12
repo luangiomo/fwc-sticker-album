@@ -3,8 +3,6 @@ import { scrollIntoViewBelowSticky } from "~/utils/scrollBelowSticky";
 import { duplicateExtra } from "~/utils/duplicateDisplay";
 import { groupSpriteStyle } from "~/utils/groupSpriteStyle";
 
-const isLg = useLgUp();
-
 const { groups } = useAlbum();
 const collection = useCollection();
 const {
@@ -89,7 +87,7 @@ const renderedGroups = computed(() => {
     .map((g) => {
       const totalInGroup = g.stickers.length;
       const ownedInGroup = g.stickers.filter(
-        (s) => getCount(s.code) >= 1
+        (s) => getCount(s.code) >= 1,
       ).length;
       const filtered = filterStickers(g.stickers);
       const gridCells =
@@ -118,7 +116,7 @@ const renderedGroups = computed(() => {
 
   if (groupSort.value === "alphabetic") {
     return [...rows].sort((a, b) =>
-      a.slug.localeCompare(b.slug, "pt", { sensitivity: "base" })
+      a.slug.localeCompare(b.slug, "pt", { sensitivity: "base" }),
     );
   }
 
@@ -140,30 +138,42 @@ const renderedGroups = computed(() => {
     });
   }
 
-  return rows;
+  const officials: typeof rows = [];
+  const nonOfficials: typeof rows = [];
+  for (const r of rows) {
+    if (r.type === "official") officials.push(r);
+    else nonOfficials.push(r);
+  }
+  return [...officials, ...nonOfficials];
+});
+
+/** Em "Padrão (Álbum)", primeira grelha só com grupos official; depois equipas/outros. */
+const groupGridSections = computed(() => {
+  const list = renderedGroups.value;
+  if (groupSort.value !== "default") {
+    return [list];
+  }
+  const officials = list.filter((g) => g.type === "official");
+  const others = list.filter((g) => g.type !== "official");
+  const sections: (typeof list)[] = [];
+  if (officials.length) sections.push(officials);
+  if (others.length) sections.push(others);
+  return sections.length ? sections : [list];
 });
 
 const { openStickerQuantity } = useStickerQuantityModal();
 
-const stickerLongPress = useMobileStickerLongPress(() => !isLg.value);
+const stickerLongPress = useMobileStickerLongPress(() => true);
 
 const openStickerQuantityModal = (sticker: Sticker) => {
   gridNav.closeStickerFind();
   openStickerQuantity(sticker);
 };
 
-const gridNav = useAlbumGridNav(renderedGroups, {
-  onStickerQuantityOpen: openStickerQuantityModal,
-});
+const gridNav = useAlbumGridNav(renderedGroups);
 
 const {
-  focusGroupIndex,
-  focusStickerIndex,
   searchOpen,
-  goToGroup,
-  setFocus,
-  cellTabindex,
-  cellGridPos,
   stickerFindOpen,
   stickerFindQuery,
   findMatchSummary,
@@ -171,6 +181,32 @@ const {
   enterStickerSearchMode,
   STICKER_FIND_INPUT_ID,
 } = gridNav;
+
+const backupPrependMenu = computed(() => [
+  [
+    {
+      label: "Ir para equipe…",
+      icon: "i-lucide-navigation",
+      onSelect: () => {
+        searchOpen.value = true;
+      },
+    },
+  ],
+]);
+
+const clearCollectionMenuGroups = computed(() => [
+  [
+    {
+      label: "Limpar coleção",
+      icon: "i-lucide-trash-2",
+      color: "error" as const,
+      disabled: collection.stickerEditLocked.value || stats.value.owned === 0,
+      onSelect: () => {
+        clearCollectionModalOpen.value = true;
+      },
+    },
+  ],
+]);
 
 function openGroupDetail(row: { id: string }) {
   const g = groups.find((x) => x.id === row.id) ?? null;
@@ -197,8 +233,6 @@ function onTeamSelect(groupId: string) {
     const el = document.getElementById(groupId);
     if (el)
       scrollIntoViewBelowSticky(el, { behavior: "smooth", block: "center" });
-    const idx = renderedGroups.value.findIndex((g) => g.id === groupId);
-    if (idx >= 0 && isLg.value) goToGroup(idx, 0);
   });
 }
 
@@ -207,14 +241,11 @@ function showDuplicateCountLabel(code: string) {
   return getCount(code) > 1;
 }
 
-function onStickerCellClick(sticker: Sticker, gIdx: number, sIdx: number) {
+function onStickerCellClick(sticker: Sticker) {
   if (filter.value === "duplicates") {
     decrement(sticker.code, { bypassStickerLock: true });
-    setFocus(gIdx, sIdx);
     return;
   }
-
-  setFocus(gIdx, sIdx);
 
   if (getCount(sticker.code) < 1) {
     increment(sticker.code);
@@ -223,16 +254,10 @@ function onStickerCellClick(sticker: Sticker, gIdx: number, sIdx: number) {
   openStickerQuantityModal(sticker);
 }
 
-function onStickerPointerDown(
-  e: PointerEvent,
-  sticker: Sticker,
-  gIdx: number,
-  sIdx: number,
-) {
+function onStickerPointerDown(e: PointerEvent, sticker: Sticker) {
   if (filter.value === "duplicates") return;
   stickerLongPress.pointerDown(e, () => {
     decrement(sticker.code);
-    setFocus(gIdx, sIdx);
   });
 }
 
@@ -245,22 +270,13 @@ function onStickerPointerCancel() {
   stickerLongPress.pointerCancel();
 }
 
-function onStickerContextMenu(
-  code: string,
-  gIdx: number,
-  sIdx: number,
-  e: MouseEvent,
-) {
+function onStickerContextMenu(code: string, e: MouseEvent) {
   const dupBypass =
-    filter.value === "duplicates" ? { bypassStickerLock: true as const } : undefined;
-  if (isLg.value) {
-    decrement(code, dupBypass);
-    setFocus(gIdx, sIdx);
-    return;
-  }
+    filter.value === "duplicates"
+      ? { bypassStickerLock: true as const }
+      : undefined;
   if (e.button !== 2) return;
   decrement(code, dupBypass);
-  setFocus(gIdx, sIdx);
 }
 
 function onGroupDetailStickerClick(sticker: Sticker) {
@@ -272,15 +288,13 @@ function onGroupDetailStickerClick(sticker: Sticker) {
 }
 
 function onGroupDetailPointerDown(e: PointerEvent, sticker: Sticker) {
-  if (!isLg.value) {
-    stickerLongPress.pointerDown(e, () => {
-      decrement(sticker.code);
-    });
-  }
+  stickerLongPress.pointerDown(e, () => {
+    decrement(sticker.code);
+  });
 }
 
 function onGroupDetailPointerUp(e: PointerEvent) {
-  if (!isLg.value) stickerLongPress.pointerUp(e);
+  stickerLongPress.pointerUp(e);
 }
 
 function onGroupDetailPointerCancel() {
@@ -288,281 +302,208 @@ function onGroupDetailPointerCancel() {
 }
 
 function onGroupDetailStickerContextMenu(sticker: Sticker, e: MouseEvent) {
-  if (isLg.value) {
-    decrement(sticker.code);
-    return;
-  }
   if (e.button !== 2) return;
   decrement(sticker.code);
 }
-
-const mobileClearMenuGroups = computed(() => [
-  [
-    {
-      label: "Limpar coleção",
-      icon: "i-lucide-trash-2",
-      color: "error" as const,
-      disabled: collection.stickerEditLocked.value || stats.value.owned === 0,
-      onSelect: () => {
-        clearCollectionModalOpen.value = true;
-      },
-    },
-  ],
-]);
 </script>
 
 <template>
   <UContainer class="p-0">
     <div
       data-sticky-page-header
-      class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 px-3 py-2 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-950/95 md:px-5 md:pt-5 lg:px-4 lg:pt-8"
+      class="sticky top-0 z-20 border-b border-neutral-200/90 bg-neutral-50/95 px-3 py-2 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-950/95 md:px-5 md:pt-4"
     >
-      <div class="flex flex-col lg:gap-1">
-        <!-- Banner quando travado — oculto: estado visível no botão de cadeado nos filtros
+      <div class="flex flex-col gap-1.5 max-w-7xl mx-auto">
         <div
-          v-if="showLockedBanner"
-          class="my-2 flex items-center gap-2 rounded-md border border-amber-200/90 bg-amber-50 px-3 py-1.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300"
+          v-if="!stickerFindOpen"
+          class="flex w-full min-w-0 items-center gap-2"
         >
-          <UIcon
-            name="i-lucide-lock"
-            class="size-3.5 shrink-0 text-amber-700 dark:text-amber-400"
-          />
-          <span class="min-w-0 flex-1">Álbum travado — edição desativada.</span>
+          <AlbumFilters class="min-w-0 flex-1" />
           <UButton
-            color="warning"
-            variant="link"
-            size="xs"
-            label="Desbloquear"
-            @click="showLockedBanner = false"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            square
+            icon="i-lucide-search"
+            aria-label="Buscar figurinha"
+            @click="enterStickerSearchMode"
+          />
+          <AlbumCollectionBackup
+            :prepend-items="backupPrependMenu"
+            :append-items="clearCollectionMenuGroups"
+            class="shrink-0"
           />
         </div>
-        -->
         <div
-          class="flex flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
+          v-else
+          data-sticker-find
+          class="flex w-full min-w-0 items-center gap-2"
         >
-          <div
-            v-if="!isLg && !stickerFindOpen"
-            class="flex w-full min-w-0 items-center gap-2"
+          <UInput
+            :id="STICKER_FIND_INPUT_ID"
+            v-model="stickerFindQuery"
+            placeholder="Código ou nome…"
+            autocomplete="off"
+            size="sm"
+            class="min-w-0 flex-1"
+            icon="i-lucide-search"
+            aria-label="Buscar figurinha por código ou nome"
+            @keydown.enter.prevent
+          />
+          <span
+            class="hidden max-w-28 shrink-0 truncate text-xs text-muted sm:block"
+            :title="findMatchSummary"
           >
-            <AlbumFilters class="min-w-0 flex-1" />
-            <AlbumCollectionBackup
-              :append-items="mobileClearMenuGroups"
-              class="shrink-0"
-            />
-          </div>
-          <AlbumFilters v-else-if="isLg" class="min-w-0 lg:flex-1" />
-          <div
-            v-if="stickerFindOpen"
-            data-sticker-find
-            class="flex w-full min-w-0 items-center gap-2 lg:max-w-md lg:gap-2"
-          >
-            <UInput
-              :id="STICKER_FIND_INPUT_ID"
-              v-model="stickerFindQuery"
-              placeholder="Código ou nome…"
-              autocomplete="off"
-              size="sm"
-              class="min-w-0 flex-1"
-              icon="i-lucide-search"
-              aria-label="Buscar figurinha por código ou nome"
-              @keydown.enter.prevent
-            />
-            <span
-              class="hidden max-w-28 shrink-0 truncate text-xs text-muted sm:block"
-              :title="findMatchSummary"
-            >
-              {{ findMatchSummary }}
-            </span>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              square
-              icon="i-lucide-x"
-              aria-label="Sair da busca (Esc)"
-              @click="exitSearchMode"
-            />
-          </div>
-          <div
-            v-else-if="isLg"
-            class="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 lg:max-w-md lg:gap-2"
-          >
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-search"
-              label="Buscar figurinha"
-              class="min-w-0 flex-1 sm:flex-initial"
-              @click="enterStickerSearchMode"
-            >
-              <template #trailing>
-                <div class="flex items-center gap-1">
-                  <UKbd size="sm">Ctrl</UKbd>
-                  <span class="text-xs">+</span>
-                  <UKbd size="sm">K</UKbd>
-                </div>
-              </template>
-            </UButton>
-            <AlbumCollectionBackup class="shrink-0" />
-            <UButton
-              color="error"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-trash-2"
-              label="Limpar coleção"
-              class="shrink-0"
-              :disabled="showLockedBanner || stats.owned === 0"
-              @click="clearCollectionModalOpen = true"
-            />
-          </div>
+            {{ findMatchSummary }}
+          </span>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            square
+            icon="i-lucide-x"
+            aria-label="Sair da busca (Esc)"
+            @click="exitSearchMode"
+          />
         </div>
 
         <AlbumProgress />
         <p
           v-if="simpleHomeVisualization"
-          class="text-[11px] leading-snug text-muted max-lg:mt-0.5 lg:text-xs"
+          class="text-[11px] leading-snug text-muted md:text-xs"
         >
-          Visualização simples: a grade de figurinhas está oculta aqui. Toque numa
-          equipe para abrir a lista com verde (já tenho) e cinza (falta).
+          Visualização simples: a grade de figurinhas está oculta aqui. Toque ou
+          clique numa equipe para abrir a lista com verde (já tenho) e cinza
+          (falta).
         </p>
         <p
-          v-if="stickerFindOpen && isLg"
-          class="hidden text-[11px] leading-snug text-muted lg:block lg:text-right"
+          v-if="stickerFindOpen"
+          class="text-[11px] leading-snug text-muted md:text-xs"
         >
-          Esc encerra a busca · Ctrl/Cmd+Shift+K busca por equipe
+          Esc encerra a busca · Ctrl/Cmd+Shift+K abre a busca por equipe
         </p>
-
-        <div
-          class="hidden max-lg:border-0 lg:block lg:border-t lg:border-neutral-200/90 lg:pt-2 dark:lg:border-neutral-800"
-        >
-          <AlbumGroupStrip @navigate="onTeamSelect" />
-        </div>
       </div>
     </div>
 
-    <div
-      class="flex flex-col px-3 pb-4 md:px-5 md:pb-5 lg:px-4 lg:pb-8"
-      role="grid"
-    >
+    <div class="max-w-7xl mx-auto space-y-6 px-3 pb-4 md:px-5 lg:px-4 lg:pb-8">
       <div
-        v-for="(item, gIdx) in renderedGroups"
-        :key="item.id"
-        :id="item.id"
-        role="row"
-        class="flex flex-col gap-3 border-t border-neutral-200 py-4 dark:border-neutral-800 max-lg:gap-3 max-lg:py-4 lg:flex-row lg:items-start lg:gap-4 lg:py-4"
+        v-for="(section, si) in groupGridSections"
+        :key="si"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-1 gap-x-4 gap-y-6"
+        :class="{ 'pt-4': si === 0 }"
       >
         <div
-          class="flex w-full min-w-0 flex-row items-center gap-3 lg:w-auto lg:max-w-none lg:shrink-0 lg:flex-col lg:items-center lg:gap-2"
+          v-for="item in section"
+          :key="item.id"
+          :id="item.id"
+          class="min-w-0 flex flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-50/40 p-3 dark:border-neutral-800 dark:bg-neutral-950/40"
         >
-          <div
-            :role="filter === 'duplicates' ? undefined : 'button'"
-            :tabindex="filter === 'duplicates' ? -1 : 0"
-            class="shrink-0 rounded-sm bg-cover bg-center outline-none"
-            :class="
-              filter === 'duplicates'
-                ? 'cursor-default'
-                : 'cursor-pointer hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary'
-            "
-            :style="groupSpriteStyle(item)"
-            :aria-label="
-              filter === 'duplicates'
-                ? `${item.slug}, ${item.name}`
-                : `Ver figurinhas de ${item.name}`
-            "
-            @click="tryOpenGroupDetail(item)"
-            @keydown.enter.prevent="tryOpenGroupDetail(item)"
-            @keydown.space.prevent="tryOpenGroupDetail(item)"
-          />
-          <component
-            :is="filter === 'duplicates' ? 'div' : 'button'"
-            :type="filter === 'duplicates' ? undefined : 'button'"
-            class="flex min-h-0 min-w-0 flex-1 items-center justify-between gap-2 rounded-sm text-left outline-none lg:hidden"
-            :class="
-              filter === 'duplicates'
-                ? 'cursor-default'
-                : 'cursor-pointer hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary'
-            "
-            :aria-label="
-              filter === 'duplicates'
-                ? `${item.slug}, ${item.name}`
-                : `Abrir figurinhas de ${item.name}`
-            "
-            @click="tryOpenGroupDetail(item)"
-          >
-            <div class="flex flex-1 items-center gap-2">
-              <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
-                {{ item.slug }}
-              </h3>
-              <span
-                class="mx-px size-0.5 rounded-full bg-neutral-400 dark:bg-neutral-500"
-              />
-              <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
-                {{ item.name }}
-              </h3>
-              <template v-if="filter !== 'duplicates'">
-                <span
-                  class="mx-px size-0.5 rounded-full bg-neutral-400 dark:bg-neutral-500"
-                />
-                <span
-                  class="shrink-0 tabular-nums text-xs leading-tight text-muted"
-                >
-                  {{ formatTeamProgress(item.ownedInGroup, item.totalInGroup) }}
-                </span>
-              </template>
-            </div>
-            <UIcon
-              v-if="filter !== 'duplicates'"
-              name="i-lucide-chevron-right"
-              class="size-3.5 shrink-0 text-muted"
-            />
-          </component>
-        </div>
-        <div
-          v-if="!simpleHomeVisualization"
-          class="grid w-full min-w-0 grid-cols-5 gap-1.5 lg:grid-cols-20 lg:gap-1 lg:flex-1"
-        >
-          <div
-            v-for="(cell, sIdx) in item.gridCells"
-            :key="cell.key"
-            role="gridcell"
-            :tabindex="cellTabindex(gIdx, sIdx)"
-            :data-grid-pos="cellGridPos(gIdx, sIdx)"
-            @click="onStickerCellClick(cell.sticker, gIdx, sIdx)"
-            @pointerdown="onStickerPointerDown($event, cell.sticker, gIdx, sIdx)"
-            @pointerup="onStickerPointerUp($event)"
-            @pointercancel="onStickerPointerCancel()"
-            @contextmenu.prevent="
-              onStickerContextMenu(cell.sticker.code, gIdx, sIdx, $event)
-            "
-            :class="[
-              'relative flex min-h-11 items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-8 lg:min-h-0 lg:rounded-sm lg:px-0',
-              filter === 'duplicates'
-                ? [
-                    'cursor-pointer bg-blue-600 text-white hover:bg-blue-700 hover:text-white active:scale-95 dark:bg-blue-500 dark:text-blue-50 dark:hover:bg-blue-600 dark:hover:text-blue-50',
-                  ]
-                : [
-                    getCount(cell.sticker.code) >= 1
-                      ? 'cursor-pointer bg-green-600 text-white dark:bg-green-600 dark:text-white'
-                      : 'cursor-pointer bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
-                  ],
-              isLg &&
-                gIdx === focusGroupIndex &&
-                sIdx === focusStickerIndex &&
-                'ring-2 ring-primary ring-offset-1 ring-offset-neutral-50 dark:ring-offset-neutral-950',
-            ]"
-          >
-            <span class="text-xs leading-none">
-              {{ cell.sticker.name }}
-            </span>
-            <AlbumDuplicateExtrasBadge
-              v-if="
-                filter !== 'duplicates' &&
-                showDuplicateCountLabel(cell.sticker.code)
+          <div class="flex w-full min-w-0 flex-row items-center gap-3">
+            <div
+              :role="filter === 'duplicates' ? undefined : 'button'"
+              :tabindex="filter === 'duplicates' ? -1 : 0"
+              class="shrink-0 rounded-sm bg-cover bg-center outline-none"
+              :class="
+                filter === 'duplicates'
+                  ? 'cursor-default'
+                  : 'cursor-pointer hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary'
               "
-              :count="getCount(cell.sticker.code)"
-              :title="`${getCount(cell.sticker.code)} na coleção`"
+              :style="groupSpriteStyle(item)"
+              :aria-label="
+                filter === 'duplicates'
+                  ? `${item.slug}, ${item.name}`
+                  : `Ver figurinhas de ${item.name}`
+              "
+              @click="tryOpenGroupDetail(item)"
+              @keydown.enter.prevent="tryOpenGroupDetail(item)"
+              @keydown.space.prevent="tryOpenGroupDetail(item)"
             />
+            <component
+              :is="filter === 'duplicates' ? 'div' : 'button'"
+              :type="filter === 'duplicates' ? undefined : 'button'"
+              class="flex min-h-0 min-w-0 flex-1 items-center justify-between gap-2 rounded-sm text-left outline-none"
+              :class="
+                filter === 'duplicates'
+                  ? 'cursor-default'
+                  : 'cursor-pointer hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary'
+              "
+              :aria-label="
+                filter === 'duplicates'
+                  ? `${item.slug}, ${item.name}`
+                  : `Abrir figurinhas de ${item.name}`
+              "
+              @click="tryOpenGroupDetail(item)"
+            >
+              <div class="flex min-w-0 flex-1 items-center gap-1.5">
+                <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+                  {{ item.slug }}
+                </h3>
+                <span
+                  class="mx-px size-0.5 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500"
+                />
+                <h3 class="min-w-0 truncate text-sm font-medium leading-tight">
+                  {{ item.name }}
+                </h3>
+                <template v-if="filter !== 'duplicates'">
+                  <span
+                    class="mx-px size-0.5 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500"
+                  />
+                  <span
+                    class="shrink-0 tabular-nums text-xs leading-tight text-muted"
+                  >
+                    {{
+                      formatTeamProgress(item.ownedInGroup, item.totalInGroup)
+                    }}
+                  </span>
+                </template>
+              </div>
+              <UIcon
+                v-if="filter !== 'duplicates'"
+                name="i-lucide-chevron-right"
+                class="size-3.5 shrink-0 text-muted"
+              />
+            </component>
+          </div>
+          <div
+            v-if="!simpleHomeVisualization"
+            class="grid w-full min-w-0 grid-cols-4 gap-1 sm:grid-cols-5"
+          >
+            <div
+              v-for="cell in item.gridCells"
+              :key="cell.key"
+              :data-sticker-cell-key="cell.key"
+              class="relative flex min-h-10 items-center justify-center overflow-visible rounded-md px-0.5 leading-none outline-none transition-colors sm:min-h-11 text-xs"
+              :class="[
+                filter === 'duplicates'
+                  ? [
+                      'cursor-pointer bg-blue-600 text-white hover:bg-blue-700 hover:text-white active:scale-95 dark:bg-blue-500 dark:text-blue-50 dark:hover:bg-blue-600 dark:hover:text-blue-50',
+                    ]
+                  : [
+                      getCount(cell.sticker.code) >= 1
+                        ? 'cursor-pointer bg-green-600 text-white dark:bg-green-600 dark:text-white'
+                        : 'cursor-pointer bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/90 dark:text-neutral-100',
+                    ],
+              ]"
+              @click="onStickerCellClick(cell.sticker)"
+              @pointerdown="onStickerPointerDown($event, cell.sticker)"
+              @pointerup="onStickerPointerUp($event)"
+              @pointercancel="onStickerPointerCancel()"
+              @contextmenu.prevent="
+                onStickerContextMenu(cell.sticker.code, $event)
+              "
+            >
+              <span class="leading-none">
+                {{ cell.sticker.name }}
+              </span>
+              <AlbumDuplicateExtrasBadge
+                v-if="
+                  filter !== 'duplicates' &&
+                  showDuplicateCountLabel(cell.sticker.code)
+                "
+                :count="getCount(cell.sticker.code)"
+                :title="`${getCount(cell.sticker.code)} na coleção`"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -620,25 +561,25 @@ const mobileClearMenuGroups = computed(() => [
         </div>
       </template>
       <template #body>
-            <div
-              v-if="groupDetailGroup"
-              class="max-h-[min(65vh,32rem)] overflow-y-auto pr-1 -mr-1"
-            >
-              <p
-                v-if="groupDetailVisibleStickers.length === 0"
-                class="text-sm text-muted"
-              >
-                Nenhuma figurinha neste filtro.
-              </p>
-              <div
-                v-else
-                class="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8 max-lg:gap-1.5 lg:gap-1.5"
-              >
-                <button
-                  v-for="sticker in groupDetailVisibleStickers"
+        <div
+          v-if="groupDetailGroup"
+          class="max-h-[min(65vh,32rem)] overflow-y-auto pr-1 -mr-1"
+        >
+          <p
+            v-if="groupDetailVisibleStickers.length === 0"
+            class="text-sm text-muted"
+          >
+            Nenhuma figurinha neste filtro.
+          </p>
+          <div
+            v-else
+            class="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8"
+          >
+            <button
+              v-for="sticker in groupDetailVisibleStickers"
               :key="sticker.id"
               type="button"
-              class="relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors lg:h-9 lg:min-h-0 lg:rounded-sm"
+              class="relative flex min-h-11 cursor-pointer items-center justify-center overflow-visible rounded-md px-0.5 text-xs leading-none outline-none transition-colors"
               :class="[
                 getCount(sticker.code) >= 1
                   ? 'bg-green-600 text-white dark:bg-green-600 dark:text-white'

@@ -9,7 +9,7 @@ export type Sticker = {
   variant: StickerVariant;
 };
 
-export type GroupType = "oficial" | "team" | "coca-cola";
+export type GroupType = "official" | "team" | "coca-cola";
 
 export type Group = {
   id: string;

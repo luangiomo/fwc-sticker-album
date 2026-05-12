@@ -24,7 +24,9 @@ type ExtraMenuGroups = {
 }[][];
 
 const props = defineProps<{
-  /** Itens extra após export/import (ex.: limpar coleção no mobile). */
+  /** Itens extra no topo do menu (ex.: ir para equipe). */
+  prependItems?: ExtraMenuGroups;
+  /** Itens extra após export/import (ex.: limpar coleção). */
   appendItems?: ExtraMenuGroups;
 }>();
 
@@ -193,7 +195,10 @@ const dropdownItems = computed(() => {
     },
   ];
 
+  const start = props.prependItems?.length ? [...props.prependItems] : [];
+
   const core = [
+    ...start,
     homeGridToggle,
     [
       {
@@ -244,19 +249,11 @@ const dropdownItems = computed(() => {
         color="neutral"
         variant="outline"
         size="sm"
+        square
         class="shrink-0"
+        icon="i-lucide-menu"
         aria-label="Opções"
-      >
-        <UIcon name="i-lucide-menu" class="size-4.5 lg:hidden" />
-        <span class="hidden items-center gap-1.5 lg:inline-flex">
-          <UIcon name="i-lucide-settings-2" class="size-4 shrink-0" />
-          <span>Opções</span>
-          <UIcon
-            name="i-lucide-chevron-down"
-            class="size-4 shrink-0 opacity-70"
-          />
-        </span>
-      </UButton>
+      />
 
       <template #simpleVizSwitch-trailing="{ item }">
         <USwitch
