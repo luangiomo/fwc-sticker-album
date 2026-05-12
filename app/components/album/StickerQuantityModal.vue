@@ -15,13 +15,11 @@ const qty = computed(() =>
 
 const locked = computed(() => stickerEditLocked.value);
 
-watch(stickerQuantityModalOpen, (open) => {
-  if (!open) {
-    nextTick(() => {
-      stickerQuantityModalSticker.value = null;
-    });
+function resetStickerAfterClose() {
+  if (!stickerQuantityModalOpen.value) {
+    stickerQuantityModalSticker.value = null;
   }
-});
+}
 
 function bump(delta: 1 | -1) {
   const s = sticker.value;
@@ -34,9 +32,11 @@ function bump(delta: 1 | -1) {
 <template>
   <UModal
     v-model:open="stickerQuantityModalOpen"
+    @after:leave="resetStickerAfterClose"
     :ui="{
+      overlay: 'z-[100]',
       content:
-        'w-[calc(100vw-2rem)] max-w-sm rounded-xl border border-neutral-200 shadow-xl dark:border-neutral-800 sm:max-w-sm',
+        'z-[101] w-[calc(100vw-2rem)] max-w-sm rounded-xl border border-neutral-200 shadow-xl dark:border-neutral-800 sm:max-w-sm',
       header: 'hidden',
       body: 'p-0',
     }"
